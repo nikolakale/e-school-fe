@@ -29,6 +29,9 @@ export interface ExamAttempt {
   /** The later of "duration ran out" and "test's availability window closed" - see BE ExamAttempt::deadline(). */
   deadline: string
   is_submitted: boolean
+  /** Both null until submitted - see BE ExamAttemptResource. */
+  percentage: number | null
+  grade: number | null
   questions: AttemptQuestion[]
   answers: AttemptAnswer[]
 }

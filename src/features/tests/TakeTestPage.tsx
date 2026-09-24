@@ -64,7 +64,9 @@ export function TakeTestPage() {
       setRemainingSeconds(remaining)
       if (remaining <= 0) {
         clearInterval(interval)
-        apiFetch<{ data: ExamAttempt }>(`/api/v1/attempts/${currentAttempt.id}/submit`, { method: 'POST' })
+        apiFetch<{ data: ExamAttempt }>(`/api/v1/attempts/${currentAttempt.id}/submit`, {
+          method: 'POST',
+        })
           .then((result) => setAttempt(result.data))
           .catch(() => {
             // Best-effort - the BE also lazily locks the attempt on the next
@@ -174,7 +176,13 @@ export function TakeTestPage() {
             : `Odgovoreno ${answeredCount}/${totalQuestions} pitanja`
         }
         action={
-          !attempt.is_submitted && (
+          attempt.is_submitted ? (
+            attempt.grade !== null && (
+              <div className="flex items-center gap-1.5 rounded-lg bg-accent-soft px-3 py-2 text-[13.5px] font-semibold text-accent">
+                Ocena {attempt.grade}
+              </div>
+            )
+          ) : (
             <div
               className={cn(
                 'flex items-center gap-1.5 rounded-lg px-3 py-2 text-[13.5px] font-semibold',
@@ -190,7 +198,15 @@ export function TakeTestPage() {
 
       {attempt.is_submitted && (
         <div className="mb-4">
-          <Notice variant="success">Test je predat. Ocena će biti dostupna nakon pregleda.</Notice>
+          <Notice variant="success">
+            Test je predat.
+            {attempt.percentage !== null && attempt.grade !== null && (
+              <>
+                {' '}
+                Tačno {attempt.percentage}% odgovora - ocena {attempt.grade}.
+              </>
+            )}
+          </Notice>
         </div>
       )}
 
