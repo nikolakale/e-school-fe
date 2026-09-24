@@ -24,6 +24,16 @@ export interface UserChild {
   name: string
 }
 
+export interface TaughtSubject {
+  id: number
+  name: string
+}
+
+export interface TaughtClass {
+  id: number
+  name: string
+}
+
 export interface User {
   id: number
   name: string
@@ -35,4 +45,8 @@ export interface User {
   parents: UserParent[]
   /** Always present; non-empty only when role.slug === 'roditelj'. */
   children: UserChild[]
+  /** Always present; non-empty only when role.slug is nastavnik/razredni_staresina. */
+  taught_subjects: TaughtSubject[]
+  /** Always present; non-empty only when role.slug is nastavnik/razredni_staresina. */
+  taught_classes: TaughtClass[]
 }

@@ -5,6 +5,7 @@ import { initials } from '@/shared/auth/roleColors'
 import { useAuthStore } from '@/shared/auth/store'
 import { IconButton } from '@/shared/ui/IconButton'
 import {
+  IconAnalytics,
   IconCalendar,
   IconClassGroups,
   IconLogout,
@@ -28,6 +29,8 @@ const NASTAVA_ITEMS: NavItem[] = [
   { to: '/calendar', label: 'Kalendar', icon: IconCalendar },
   { to: '/scheduled-tests', label: 'Zakazani testovi', icon: IconScheduledTests },
 ]
+
+const ANALITIKA_ITEMS: NavItem[] = [{ to: '/analytics', label: 'Analitika', icon: IconAnalytics }]
 
 const ADMINISTRACIJA_ITEMS: NavItem[] = [
   { to: '/admin/students', label: 'Učenici', icon: IconStudent },
@@ -93,6 +96,10 @@ export function Layout() {
         )}
 
         <NavGroup label="Nastava" items={NASTAVA_ITEMS} />
+
+        {['nastavnik', 'razredni_staresina', 'direktor', 'strucni_saradnik'].includes(
+          user.role.slug,
+        ) && <NavGroup label="Analitika" items={ANALITIKA_ITEMS} />}
 
         {user.role.slug === 'direktor' && (
           <NavGroup label="Administracija" items={ADMINISTRACIJA_ITEMS} />

@@ -103,6 +103,17 @@ export function IconProfile(props: IconProps) {
   )
 }
 
+export function IconAnalytics(props: IconProps) {
+  return (
+    <svg {...iconProps(props)}>
+      <path d="M4 20V10" />
+      <path d="M10 20V4" />
+      <path d="M16 20v-7" />
+      <path d="M4 20h16" />
+    </svg>
+  )
+}
+
 export function IconEnvelope(props: IconProps) {
   return (
     <svg {...iconProps(props)}>

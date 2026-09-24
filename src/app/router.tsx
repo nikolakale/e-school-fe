@@ -3,6 +3,7 @@ import { createBrowserRouter } from 'react-router-dom'
 import { ClassGroupsPage } from '@/features/admin/ClassGroupsPage'
 import { StaffPage } from '@/features/admin/StaffPage'
 import { StudentsPage } from '@/features/admin/StudentsPage'
+import { AnalyticsPage } from '@/features/analytics/AnalyticsPage'
 import { AcceptParentInvitationPage } from '@/features/auth/AcceptParentInvitationPage'
 import { LoginPage } from '@/features/auth/LoginPage'
 import { SetPasswordPage } from '@/features/auth/SetPasswordPage'
@@ -111,6 +112,18 @@ export const router = createBrowserRouter([
           <RequireAuth>
             <RequireRole roles={['ucenik', 'roditelj']}>
               <ProfilePage />
+            </RequireRole>
+          </RequireAuth>
+        ),
+      },
+      {
+        path: 'analytics',
+        element: (
+          <RequireAuth>
+            <RequireRole
+              roles={['nastavnik', 'razredni_staresina', 'direktor', 'strucni_saradnik']}
+            >
+              <AnalyticsPage />
             </RequireRole>
           </RequireAuth>
         ),
