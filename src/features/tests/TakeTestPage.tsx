@@ -236,16 +236,10 @@ export function TakeTestPage() {
       </div>
 
       {!attempt.is_submitted && (
-        <div className="mt-5 flex items-center gap-3">
+        <div className="mt-5">
           <Button onClick={() => void handleSubmit()} disabled={submitting}>
             {submitting ? 'Predaja...' : 'Predaj test'}
           </Button>
-          <Link
-            to="/scheduled-tests"
-            className="text-[12.5px] font-semibold text-ink-muted hover:text-ink"
-          >
-            Nastavi kasnije
-          </Link>
         </div>
       )}
 
