@@ -8,6 +8,7 @@ import {
   IconCalendar,
   IconClassGroups,
   IconLogout,
+  IconProfile,
   IconScheduledTests,
   IconStudent,
   IconSubjects,
@@ -19,6 +20,8 @@ interface NavItem {
   label: string
   icon: (props: { className?: string }) => ReactNode
 }
+
+const PROFIL_ITEMS: NavItem[] = [{ to: '/profile', label: 'Moj profil', icon: IconProfile }]
 
 const NASTAVA_ITEMS: NavItem[] = [
   { to: '/subjects', label: 'Predmeti', icon: IconSubjects },
@@ -84,6 +87,10 @@ export function Layout() {
             E-School
           </div>
         </div>
+
+        {(user.role.slug === 'ucenik' || user.role.slug === 'roditelj') && (
+          <NavGroup label="Profil" items={PROFIL_ITEMS} />
+        )}
 
         <NavGroup label="Nastava" items={NASTAVA_ITEMS} />
 

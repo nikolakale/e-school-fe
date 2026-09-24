@@ -19,6 +19,11 @@ export interface UserParent {
   email: string
 }
 
+export interface UserChild {
+  id: number
+  name: string
+}
+
 export interface User {
   id: number
   name: string
@@ -28,4 +33,6 @@ export interface User {
   permissions: string[]
   /** Always present; non-empty only when role.slug === 'ucenik'. */
   parents: UserParent[]
+  /** Always present; non-empty only when role.slug === 'roditelj'. */
+  children: UserChild[]
 }

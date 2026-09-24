@@ -93,6 +93,16 @@ export function IconClock(props: IconProps) {
   )
 }
 
+export function IconProfile(props: IconProps) {
+  return (
+    <svg {...iconProps(props)}>
+      <circle cx="12" cy="12" r="9" />
+      <circle cx="12" cy="10" r="2.6" />
+      <path d="M6.3 18.2C7.2 15.9 9.4 14.5 12 14.5s4.8 1.4 5.7 3.7" />
+    </svg>
+  )
+}
+
 export function IconEnvelope(props: IconProps) {
   return (
     <svg {...iconProps(props)}>

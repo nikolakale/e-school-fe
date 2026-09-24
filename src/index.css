@@ -46,6 +46,14 @@
   --role-roditelj-fg: #ac3f6c;
   --role-roditelj-bg: #fae5ed;
 
+  /* Grafik napretka: categorical color by tip testa (validated all-pairs safe
+     triplet - see dataviz skill's reference palette). Godišnji is rare enough
+     (~1/year) that it's told apart by marker shape instead of a 4th hue,
+     which would fail the all-pairs colorblind-safety check. */
+  --chart-mesecni: #2a78d6;
+  --chart-dvomesecni: #eb6834;
+  --chart-polugodisnji: #1baf7a;
+
   color-scheme: light;
 }
 
@@ -79,6 +87,10 @@
     --role-roditelj-fg: #eca9c4;
     --role-roditelj-bg: #3c2130;
 
+    --chart-mesecni: #3987e5;
+    --chart-dvomesecni: #d95926;
+    --chart-polugodisnji: #199e70;
+
     color-scheme: dark;
   }
 }
@@ -111,6 +123,10 @@
   --role-strucni-bg: #3c2f14;
   --role-roditelj-fg: #eca9c4;
   --role-roditelj-bg: #3c2130;
+
+  --chart-mesecni: #3987e5;
+  --chart-dvomesecni: #d95926;
+  --chart-polugodisnji: #199e70;
 
   color-scheme: dark;
 }
