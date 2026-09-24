@@ -10,14 +10,17 @@ import { FormErrors } from '@/shared/ui/Notice'
 import { PageHeader } from '@/shared/ui/PageHeader'
 import { EmptyRow, Table, Tbody, Td, Th, Tr } from '@/shared/ui/Table'
 
-import type { SchoolYear, Semester } from '../calendar/types'
+import type { SchoolYear, ScheduledTest, Semester } from '../calendar/types'
+import { SCHEDULED_TEST_TYPE_LABELS } from '../calendar/types'
 import { GradeDistributionBars } from './GradeDistributionBars'
 import { TrendChart } from './TrendChart'
 import type {
+  AttemptRow,
   ClassComparisonEntry,
   ClassOverview,
   ClassSubjectAnalytics,
   QuestionMiss,
+  ScheduledTestAttempts,
   TeacherComparisonEntry,
 } from './types'
 
@@ -96,16 +99,29 @@ export function AnalyticsPage() {
     )
   }
 
+  const schoolYearId = String(
+    semesters.find((semester) => String(semester.id) === semesterId)?.school_year_id ?? '',
+  )
+
   if (user.role.slug === 'razredni_staresina') {
-    return <RazredniAnalytics user={user} semesterId={semesterId} semesterPicker={semesterPicker} />
+    return (
+      <RazredniAnalytics
+        user={user}
+        semesterId={semesterId}
+        schoolYearId={schoolYearId}
+        semesterPicker={semesterPicker}
+      />
+    )
   }
 
   if (user.role.slug === 'direktor' || user.role.slug === 'strucni_saradnik') {
     return (
       <StaffWideAnalytics
         semesterId={semesterId}
+        schoolYearId={schoolYearId}
         semesterPicker={semesterPicker}
         canViewTeacherComparison={user.role.slug === 'direktor'}
+        canFinalizeGrades={user.role.slug === 'direktor'}
       />
     )
   }
@@ -170,6 +186,11 @@ function NastavnikAnalytics({
         subjectId={subjectId}
         semesterId={semesterId}
       />
+      <RetakeManagementSection
+        classGroupId={classGroupId}
+        subjectId={subjectId}
+        semesterId={semesterId}
+      />
       <ClassComparisonSection
         subjectId={subjectId}
         semesterId={semesterId}
@@ -183,10 +204,12 @@ function NastavnikAnalytics({
 function RazredniAnalytics({
   user,
   semesterId,
+  schoolYearId,
   semesterPicker,
 }: {
   user: User
   semesterId: string
+  schoolYearId: string
   semesterPicker: React.ReactNode
 }) {
   const [classGroupId, setClassGroupId] = useState<string | null>(null)
@@ -217,19 +240,30 @@ function RazredniAnalytics({
   return (
     <div className="max-w-4xl">
       <PageHeader eyebrow="Analitika" title="Analitika odeljenja" action={semesterPicker} />
-      {classGroupId && <ClassOverviewSection classGroupId={classGroupId} semesterId={semesterId} />}
+      {classGroupId && (
+        <ClassOverviewSection
+          classGroupId={classGroupId}
+          semesterId={semesterId}
+          schoolYearId={schoolYearId}
+          canFinalizeGrades
+        />
+      )}
     </div>
   )
 }
 
 function StaffWideAnalytics({
   semesterId,
+  schoolYearId,
   semesterPicker,
   canViewTeacherComparison,
+  canFinalizeGrades,
 }: {
   semesterId: string
+  schoolYearId: string
   semesterPicker: React.ReactNode
   canViewTeacherComparison: boolean
+  canFinalizeGrades: boolean
 }) {
   const [classGroups, setClassGroups] = useState<ClassGroup[]>([])
   const [subjects, setSubjects] = useState<{ id: number; name: string }[]>([])
@@ -272,7 +306,12 @@ function StaffWideAnalytics({
           ))}
         </select>
         {overviewClassGroupId && (
-          <ClassOverviewSection classGroupId={overviewClassGroupId} semesterId={semesterId} />
+          <ClassOverviewSection
+            classGroupId={overviewClassGroupId}
+            semesterId={semesterId}
+            schoolYearId={schoolYearId}
+            canFinalizeGrades={canFinalizeGrades}
+          />
         )}
       </section>
 
@@ -376,6 +415,163 @@ function ClassSubjectSection({
         <TrendChart points={data.trend} />
       </Card>
     </section>
+  )
+}
+
+/**
+ * Retake approval (Faza 5's `POST /attempts/{id}/retake`) had no FE screen
+ * until now - a teacher picks one of their scheduled tests, sees who's
+ * eligible (`can_retake`, computed server-side), and grants it.
+ */
+function RetakeManagementSection({
+  classGroupId,
+  subjectId,
+  semesterId,
+}: {
+  classGroupId: string
+  subjectId: string
+  semesterId: string
+}) {
+  const [tests, setTests] = useState<ScheduledTest[]>([])
+  const [scheduledTestId, setScheduledTestId] = useState('')
+  const [listError, setListError] = useState<ApiError | null>(null)
+
+  useEffect(() => {
+    async function loadTests() {
+      setListError(null)
+      try {
+        const result = await apiFetch<{ data: ScheduledTest[] }>(
+          `/api/v1/scheduled-tests?class_group_id=${classGroupId}&subject_id=${subjectId}&semester_id=${semesterId}`,
+        )
+        setTests(result.data)
+        setScheduledTestId((current) =>
+          result.data.some((test) => String(test.id) === current)
+            ? current
+            : String(result.data[0]?.id ?? ''),
+        )
+      } catch (err) {
+        setListError(err instanceof ApiError ? err : new ApiError(500, 'Greška pri učitavanju.'))
+      }
+    }
+    void loadTests()
+  }, [classGroupId, subjectId, semesterId])
+
+  if (listError) return <FormErrors error={listError} />
+
+  return (
+    <section className="mb-8">
+      <h2 className="mb-3 text-[15px] font-semibold text-ink font-serif">Pokušaji i popravni</h2>
+      {tests.length === 0 ? (
+        <p className="text-[13.5px] text-ink-muted">Nema zakazanih testova.</p>
+      ) : (
+        <>
+          <select
+            value={scheduledTestId}
+            onChange={(event) => setScheduledTestId(event.target.value)}
+            className={`${fieldControlClass} mb-3`}
+          >
+            {tests.map((test) => (
+              <option key={test.id} value={test.id}>
+                {SCHEDULED_TEST_TYPE_LABELS[test.type]} - {test.available_from.slice(0, 10)}
+              </option>
+            ))}
+          </select>
+          {scheduledTestId && <AttemptsTable scheduledTestId={scheduledTestId} />}
+        </>
+      )}
+    </section>
+  )
+}
+
+function AttemptsTable({ scheduledTestId }: { scheduledTestId: string }) {
+  const [attempts, setAttempts] = useState<AttemptRow[] | null>(null)
+  const [error, setError] = useState<ApiError | null>(null)
+  const [refreshKey, setRefreshKey] = useState(0)
+  const [grantingId, setGrantingId] = useState<number | null>(null)
+  const [grantError, setGrantError] = useState<ApiError | null>(null)
+
+  useEffect(() => {
+    async function load() {
+      setError(null)
+      try {
+        const result = await apiFetch<{ data: ScheduledTestAttempts }>(
+          `/api/v1/scheduled-tests/${scheduledTestId}/attempts`,
+        )
+        setAttempts(result.data.attempts)
+      } catch (err) {
+        setError(err instanceof ApiError ? err : new ApiError(500, 'Greška pri učitavanju.'))
+      }
+    }
+    void load()
+  }, [scheduledTestId, refreshKey])
+
+  async function handleGrant(attemptId: number) {
+    if (!window.confirm('Odobriti popravni za ovog učenika?')) return
+    setGrantingId(attemptId)
+    setGrantError(null)
+    try {
+      await apiFetch(`/api/v1/attempts/${attemptId}/retake`, { method: 'POST' })
+      setRefreshKey((current) => current + 1)
+    } catch (err) {
+      setGrantError(
+        err instanceof ApiError ? err : new ApiError(500, 'Greška pri odobravanju popravnog.'),
+      )
+    } finally {
+      setGrantingId(null)
+    }
+  }
+
+  if (error) return <FormErrors error={error} />
+
+  return (
+    <div>
+      {grantError && (
+        <div className="mb-2">
+          <FormErrors error={grantError} />
+        </div>
+      )}
+      <Card>
+        <Table>
+          <thead>
+            <tr>
+              <Th>Učenik</Th>
+              <Th>Predato</Th>
+              <Th>%</Th>
+              <Th>Ocena</Th>
+              <Th>Popravni</Th>
+              <Th></Th>
+            </tr>
+          </thead>
+          <Tbody>
+            {attempts === null && <EmptyRow colSpan={6}>Učitavanje...</EmptyRow>}
+            {attempts?.map((row) => (
+              <Tr key={row.attempt_id}>
+                <Td className="font-semibold text-ink">{row.student.name}</Td>
+                <Td>{row.submitted_at.slice(0, 10)}</Td>
+                <Td className="font-mono">{row.percentage}%</Td>
+                <Td className="font-mono">{row.grade}</Td>
+                <Td>{row.is_retake ? 'Da' : 'Ne'}</Td>
+                <Td>
+                  {row.can_retake ? (
+                    <button
+                      type="button"
+                      onClick={() => void handleGrant(row.attempt_id)}
+                      disabled={grantingId === row.attempt_id}
+                      className="text-accent underline decoration-dotted underline-offset-2 hover:text-ink disabled:opacity-50"
+                    >
+                      {grantingId === row.attempt_id ? '...' : 'Odobri popravni'}
+                    </button>
+                  ) : (
+                    <span className="text-ink-faint">—</span>
+                  )}
+                </Td>
+              </Tr>
+            ))}
+            {attempts?.length === 0 && <EmptyRow colSpan={6}>Nema pokušaja.</EmptyRow>}
+          </Tbody>
+        </Table>
+      </Card>
+    </div>
   )
 }
 
@@ -510,13 +706,20 @@ function QuestionAnalysisSection({
 function ClassOverviewSection({
   classGroupId,
   semesterId,
+  schoolYearId,
+  canFinalizeGrades = false,
 }: {
   classGroupId: string
   semesterId: string
+  schoolYearId?: string
+  canFinalizeGrades?: boolean
 }) {
   const [overview, setOverview] = useState<ClassOverview | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<ApiError | null>(null)
+  const [refreshKey, setRefreshKey] = useState(0)
+  const [finalizingKey, setFinalizingKey] = useState<string | null>(null)
+  const [finalizeError, setFinalizeError] = useState<ApiError | null>(null)
 
   useEffect(() => {
     async function load() {
@@ -534,7 +737,35 @@ function ClassOverviewSection({
       }
     }
     void load()
-  }, [classGroupId, semesterId])
+  }, [classGroupId, semesterId, refreshKey])
+
+  async function handleFinalize(studentId: number, subjectId: number, value: number) {
+    if (!schoolYearId) return
+    if (!window.confirm(`Finalizovati ocenu ${value}? Ovo se ne može poništiti.`)) return
+
+    const key = `${studentId}-${subjectId}`
+    setFinalizingKey(key)
+    setFinalizeError(null)
+    try {
+      await apiFetch('/api/v1/grades', {
+        method: 'POST',
+        body: {
+          student_id: studentId,
+          subject_id: subjectId,
+          school_year_id: Number(schoolYearId),
+          semester_id: Number(semesterId),
+          value,
+        },
+      })
+      setRefreshKey((current) => current + 1)
+    } catch (err) {
+      setFinalizeError(
+        err instanceof ApiError ? err : new ApiError(500, 'Greška pri finalizaciji.'),
+      )
+    } finally {
+      setFinalizingKey(null)
+    }
+  }
 
   if (loading) return <p className="text-ink-muted">Učitavanje...</p>
   if (error) return <FormErrors error={error} />
@@ -579,6 +810,16 @@ function ClassOverviewSection({
         <h3 className="mb-2 text-[13px] font-semibold text-ink-muted">
           Učenici kojima je potrebna podrška
         </h3>
+        {canFinalizeGrades && (
+          <p className="mb-2 text-[12px] text-ink-faint">
+            Podvučene ocene su predlog - kliknite da finalizujete.
+          </p>
+        )}
+        {finalizeError && (
+          <div className="mb-2">
+            <FormErrors error={finalizeError} />
+          </div>
+        )}
         <Card>
           <Table>
             <thead>
@@ -597,9 +838,40 @@ function ClassOverviewSection({
                   <Td className="font-semibold text-ink">{row.student.name}</Td>
                   {overview.subjects.map((subjectRow) => {
                     const entry = row.subjects.find((s) => s.subject.id === subjectRow.subject.id)
+                    if (!entry || entry.grade === null) {
+                      return (
+                        <Td key={subjectRow.subject.id} className="font-mono text-ink-faint">
+                          —
+                        </Td>
+                      )
+                    }
+                    if (entry.is_finalized || !canFinalizeGrades) {
+                      return (
+                        <Td
+                          key={subjectRow.subject.id}
+                          className={
+                            entry.is_finalized ? 'font-mono text-ink' : 'font-mono text-ink-muted'
+                          }
+                        >
+                          {entry.grade}
+                        </Td>
+                      )
+                    }
+                    const key = `${row.student.id}-${subjectRow.subject.id}`
+                    const grade = entry.grade
                     return (
                       <Td key={subjectRow.subject.id} className="font-mono">
-                        {entry?.grade ?? '—'}
+                        <button
+                          type="button"
+                          onClick={() =>
+                            void handleFinalize(row.student.id, subjectRow.subject.id, grade)
+                          }
+                          disabled={finalizingKey === key}
+                          title="Finalizuj ocenu"
+                          className="text-accent underline decoration-dotted underline-offset-2 hover:text-ink disabled:opacity-50"
+                        >
+                          {finalizingKey === key ? '...' : grade}
+                        </button>
                       </Td>
                     )
                   })}

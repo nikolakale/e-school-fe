@@ -39,9 +39,15 @@ export interface ClassOverviewSubject extends GradeSummary {
   subject: { id: number; name: string }
 }
 
+export interface StudentRiskSubjectEntry {
+  subject: { id: number; name: string }
+  grade: number | null
+  is_finalized: boolean
+}
+
 export interface StudentRiskEntry {
   student: { id: number; name: string }
-  subjects: { subject: { id: number; name: string }; grade: number | null }[]
+  subjects: StudentRiskSubjectEntry[]
   average: number | null
   weak_subject_count: number
 }
@@ -58,4 +64,19 @@ export interface TeacherComparisonEntry {
   test_count: number
   average: number | null
   graded_count: number
+}
+
+export interface AttemptRow {
+  attempt_id: number
+  student: { id: number; name: string }
+  submitted_at: string
+  percentage: number
+  grade: number
+  is_retake: boolean
+  can_retake: boolean
+}
+
+export interface ScheduledTestAttempts {
+  scheduled_test: { id: number; type: ScheduledTestType; available_from: string }
+  attempts: AttemptRow[]
 }
