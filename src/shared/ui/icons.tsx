@@ -74,6 +74,16 @@ export function IconTeachingAssignments(props: IconProps) {
   return <IconSubjects {...props} />
 }
 
+/** Single-person glyph - Učenici (students), distinct from the two-person IconUsers used for Osoblje. */
+export function IconStudent(props: IconProps) {
+  return (
+    <svg {...iconProps(props)}>
+      <circle cx="12" cy="8" r="3.6" />
+      <path d="M5 20c0-3.9 3.1-7 7-7s7 3.1 7 7" />
+    </svg>
+  )
+}
+
 export function IconEnvelope(props: IconProps) {
   return (
     <svg {...iconProps(props)}>

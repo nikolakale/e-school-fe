@@ -1,7 +1,8 @@
 import { createBrowserRouter } from 'react-router-dom'
 
 import { ClassGroupsPage } from '@/features/admin/ClassGroupsPage'
-import { UsersPage } from '@/features/admin/UsersPage'
+import { StaffPage } from '@/features/admin/StaffPage'
+import { StudentsPage } from '@/features/admin/StudentsPage'
 import { AcceptParentInvitationPage } from '@/features/auth/AcceptParentInvitationPage'
 import { LoginPage } from '@/features/auth/LoginPage'
 import { SetPasswordPage } from '@/features/auth/SetPasswordPage'
@@ -31,11 +32,21 @@ export const router = createBrowserRouter([
         ),
       },
       {
-        path: 'admin/users',
+        path: 'admin/students',
         element: (
           <RequireAuth>
             <RequireRole roles={['direktor']}>
-              <UsersPage />
+              <StudentsPage />
+            </RequireRole>
+          </RequireAuth>
+        ),
+      },
+      {
+        path: 'admin/staff',
+        element: (
+          <RequireAuth>
+            <RequireRole roles={['direktor']}>
+              <StaffPage />
             </RequireRole>
           </RequireAuth>
         ),

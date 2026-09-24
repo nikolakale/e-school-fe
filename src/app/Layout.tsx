@@ -9,6 +9,7 @@ import {
   IconClassGroups,
   IconLogout,
   IconScheduledTests,
+  IconStudent,
   IconSubjects,
   IconUsers,
 } from '@/shared/ui/icons'
@@ -26,7 +27,8 @@ const NASTAVA_ITEMS: NavItem[] = [
 ]
 
 const ADMINISTRACIJA_ITEMS: NavItem[] = [
-  { to: '/admin/users', label: 'Korisnici', icon: IconUsers },
+  { to: '/admin/students', label: 'Učenici', icon: IconStudent },
+  { to: '/admin/staff', label: 'Osoblje', icon: IconUsers },
   { to: '/admin/class-groups', label: 'Odeljenja', icon: IconClassGroups },
 ]
 
