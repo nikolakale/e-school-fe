@@ -7,6 +7,8 @@ import { AcceptParentInvitationPage } from '@/features/auth/AcceptParentInvitati
 import { LoginPage } from '@/features/auth/LoginPage'
 import { SetPasswordPage } from '@/features/auth/SetPasswordPage'
 import { HomePage } from '@/features/home/HomePage'
+import { LessonsPage } from '@/features/subjects/LessonsPage'
+import { SubjectsPage } from '@/features/subjects/SubjectsPage'
 import { RequireAuth, RequireRole } from '@/shared/auth/guards'
 
 import { Layout } from './Layout'
@@ -54,6 +56,22 @@ export const router = createBrowserRouter([
             <RequireRole roles={['direktor', 'razredni_staresina']}>
               <ParentInvitationsPage />
             </RequireRole>
+          </RequireAuth>
+        ),
+      },
+      {
+        path: 'subjects',
+        element: (
+          <RequireAuth>
+            <SubjectsPage />
+          </RequireAuth>
+        ),
+      },
+      {
+        path: 'subjects/:subjectId/lessons',
+        element: (
+          <RequireAuth>
+            <LessonsPage />
           </RequireAuth>
         ),
       },

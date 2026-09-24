@@ -22,6 +22,9 @@ export function Layout() {
             <Link to="/" className="font-semibold">
               E-School
             </Link>
+            <Link to="/subjects" className="text-gray-600 hover:text-gray-900">
+              Predmeti
+            </Link>
             {user.role.slug === 'direktor' && (
               <>
                 <Link to="/admin/users" className="text-gray-600 hover:text-gray-900">
