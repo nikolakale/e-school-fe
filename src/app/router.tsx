@@ -11,6 +11,7 @@ import { SchoolCalendarPage } from '@/features/calendar/SchoolCalendarPage'
 import { HomePage } from '@/features/home/HomePage'
 import { LessonsPage } from '@/features/subjects/LessonsPage'
 import { SubjectsPage } from '@/features/subjects/SubjectsPage'
+import { TakeTestPage } from '@/features/tests/TakeTestPage'
 import { RequireAuth, RequireRole } from '@/shared/auth/guards'
 
 import { Layout } from './Layout'
@@ -90,6 +91,16 @@ export const router = createBrowserRouter([
         element: (
           <RequireAuth>
             <ScheduledTestsPage />
+          </RequireAuth>
+        ),
+      },
+      {
+        path: 'tests/:scheduledTestId',
+        element: (
+          <RequireAuth>
+            <RequireRole roles={['ucenik']}>
+              <TakeTestPage />
+            </RequireRole>
           </RequireAuth>
         ),
       },

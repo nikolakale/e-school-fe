@@ -1,4 +1,5 @@
 import { Fragment, type FormEvent, useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 
 import { apiFetch, ApiError } from '@/shared/api/client'
 import { useAuthStore } from '@/shared/auth/store'
@@ -27,6 +28,30 @@ interface Subject {
 
 const TEST_TYPES: ScheduledTestType[] = ['mesecni', 'dvomesecni', 'polugodisnji', 'godisnji']
 
+/**
+ * A student's action for one test: nothing to click before it opens, a link
+ * into the attempt once it's open or closed - whether that resumes an
+ * in-progress attempt, shows an already-submitted one, or (for a test the
+ * student never started, past its window) surfaces the BE's own error is up
+ * to TakeTestPage, not this list.
+ */
+function StudentTestAction({ test }: { test: ScheduledTest }) {
+  const now = new Date()
+  if (now < new Date(test.available_from)) {
+    return <span className="text-[12.5px] text-ink-faint">Uskoro</span>
+  }
+
+  const closed = now > new Date(test.available_until)
+  return (
+    <Link
+      to={`/tests/${test.id}`}
+      className="text-[12.5px] font-semibold text-accent hover:underline"
+    >
+      {closed ? 'Pogledaj' : 'Polaži test'}
+    </Link>
+  )
+}
+
 /** `datetime-local` gives "YYYY-MM-DDTHH:mm" in local time; the API wants ISO8601. */
 function toIsoDateTime(localValue: string): string {
   return new Date(localValue).toISOString()
@@ -52,6 +77,7 @@ export function ScheduledTestsPage() {
     user?.role.slug === 'nastavnik' ||
     user?.role.slug === 'razredni_staresina' ||
     user?.role.slug === 'direktor'
+  const isUcenik = user?.role.slug === 'ucenik'
 
   const [classGroups, setClassGroups] = useState<ClassGroup[]>([])
   const [selectedClassGroupId, setSelectedClassGroupId] = useState('')
@@ -88,18 +114,21 @@ export function ScheduledTestsPage() {
   const [rescheduling, setRescheduling] = useState(false)
 
   // Class groups drive both the page's own filter and the form's odeljenje select.
+  // A student's own odeljenje is the sensible default - everyone else starts on the first one.
   useEffect(() => {
     async function loadClassGroups() {
       try {
         const result = await apiFetch<{ data: ClassGroup[] }>('/api/v1/class-groups')
         setClassGroups(result.data)
-        setSelectedClassGroupId((current) => current || String(result.data[0]?.id ?? ''))
+        setSelectedClassGroupId(
+          (current) => current || String(user?.class_group?.id ?? result.data[0]?.id ?? ''),
+        )
       } catch {
         // The picker just stays empty; the page below shows nothing to pick.
       }
     }
     void loadClassGroups()
-  }, [])
+  }, [user?.class_group?.id])
 
   // Options for the create form's selects, fetched once.
   useEffect(() => {
@@ -260,7 +289,8 @@ export function ScheduledTestsPage() {
     }
   }
 
-  const columnCount = canSchedule ? 8 : 7
+  const showActionColumn = canSchedule || isUcenik
+  const columnCount = showActionColumn ? 8 : 7
 
   return (
     <div className="max-w-4xl">
@@ -494,7 +524,7 @@ export function ScheduledTestsPage() {
                 <Th>Trajanje</Th>
                 <Th>Popravni</Th>
                 <Th>Zakazao</Th>
-                {canSchedule && <Th />}
+                {showActionColumn && <Th />}
               </tr>
             </thead>
             <Tbody>
@@ -512,15 +542,18 @@ export function ScheduledTestsPage() {
                         {test.retake_allowed ? `Da (${test.retake_wait_days ?? '-'} d.)` : 'Ne'}
                       </Td>
                       <Td>{test.scheduled_by.name}</Td>
-                      {canSchedule && (
+                      {showActionColumn && (
                         <Td className="text-right">
-                          <button
-                            type="button"
-                            onClick={() => openReschedule(test)}
-                            className="text-[12.5px] font-semibold text-accent hover:underline"
-                          >
-                            Pomeri
-                          </button>
+                          {canSchedule && (
+                            <button
+                              type="button"
+                              onClick={() => openReschedule(test)}
+                              className="text-[12.5px] font-semibold text-accent hover:underline"
+                            >
+                              Pomeri
+                            </button>
+                          )}
+                          {isUcenik && <StudentTestAction test={test} />}
                         </Td>
                       )}
                     </Tr>
