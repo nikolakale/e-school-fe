@@ -22,23 +22,21 @@ export function LessonsPage() {
   const [loading, setLoading] = useState(true)
   const [listError, setListError] = useState<string | null>(null)
 
-  async function loadLessons() {
-    setLoading(true)
-    setListError(null)
-    try {
-      const result = await apiFetch<{ data: Lesson[] }>(`/api/v1/subjects/${subjectId}/lessons`)
-      setLessons(result.data)
-    } catch (err) {
-      setListError(err instanceof ApiError ? err.message : 'Greška pri učitavanju lekcija.')
-    } finally {
-      setLoading(false)
-    }
-  }
-
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- loadLessons's setState calls happen after the awaited request, not synchronously
+    async function loadLessons() {
+      setLoading(true)
+      setListError(null)
+      try {
+        const result = await apiFetch<{ data: Lesson[] }>(`/api/v1/subjects/${subjectId}/lessons`)
+        setLessons(result.data)
+      } catch (err) {
+        setListError(err instanceof ApiError ? err.message : 'Greška pri učitavanju lekcija.')
+      } finally {
+        setLoading(false)
+      }
+    }
+
     void loadLessons()
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- loadLessons only closes over subjectId, which is already listed
   }, [subjectId])
 
   return (
