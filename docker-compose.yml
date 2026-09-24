@@ -1,0 +1,14 @@
+# Standalone FE dev container - runs independently of the backend, per the
+# project's FE/BE independence principle. Point VITE_API_URL at wherever
+# e-school-be is running (see that repo's docker-compose.yml to run both
+# together from a sibling checkout).
+services:
+  frontend:
+    build: .
+    ports:
+      - '5173:5173'
+    environment:
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:8000}
+    volumes:
+      - .:/app
+      - /app/node_modules
