@@ -64,11 +64,7 @@ export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): 
   const data = await response.json().catch(() => null)
 
   if (!response.ok) {
-    throw new ApiError(
-      response.status,
-      data?.message ?? response.statusText,
-      data?.errors,
-    )
+    throw new ApiError(response.status, data?.message ?? response.statusText, data?.errors)
   }
 
   return data as T

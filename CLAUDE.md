@@ -14,7 +14,7 @@ assume access to the BE codebase; the API contract is the only shared surface.
   fetching library "for later" - add it only when a real caching/refetch need shows
   up.
 - ESLint (flat config, `eslint.config.js`) + Prettier - `npm run lint`, `npm run
-  format`.
+format`.
 - Auth: Sanctum SPA cookie mode. Every mutating request needs a fresh CSRF cookie
   first (`ensureCsrfCookie()` in the api client handles this automatically) and
   `credentials: 'include'` on every request - never switch to Bearer tokens.

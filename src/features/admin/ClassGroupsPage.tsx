@@ -8,6 +8,7 @@ export function ClassGroupsPage() {
   const [loading, setLoading] = useState(true)
   const [listError, setListError] = useState<string | null>(null)
 
+  const [showForm, setShowForm] = useState(false)
   const [name, setName] = useState('')
   const [gradeLevel, setGradeLevel] = useState('')
   const [formError, setFormError] = useState<ApiError | null>(null)
@@ -44,6 +45,7 @@ export function ClassGroupsPage() {
       setSuccessMessage('Odeljenje je kreirano.')
       setName('')
       setGradeLevel('')
+      setShowForm(false)
       await loadClassGroups()
     } catch (err) {
       if (err instanceof ApiError) {
@@ -58,63 +60,88 @@ export function ClassGroupsPage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-8 p-6">
-      <h1 className="text-xl font-semibold">Odeljenja</h1>
-
-      <form onSubmit={handleCreate} className="space-y-4 rounded-lg border border-gray-200 p-4">
-        <h2 className="font-medium">Novo odeljenje</h2>
-
-        {successMessage && (
-          <p className="rounded bg-green-50 p-2 text-sm text-green-700">{successMessage}</p>
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-semibold">Odeljenja</h1>
+        {!showForm && (
+          <button
+            type="button"
+            onClick={() => setShowForm(true)}
+            className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          >
+            + Dodaj odeljenje
+          </button>
         )}
-        {formError && (
-          <div className="rounded bg-red-50 p-2 text-sm text-red-700">
-            <p>{formError.message}</p>
-            {formError.errors &&
-              Object.values(formError.errors)
-                .flat()
-                .map((message) => <p key={message}>{message}</p>)}
-          </div>
-        )}
+      </div>
 
-        <div className="flex flex-wrap gap-4">
-          <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-              Naziv
-            </label>
-            <input
-              id="name"
-              type="text"
-              required
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              className="mt-1 rounded border border-gray-300 px-3 py-2"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="grade_level" className="block text-sm font-medium text-gray-700">
-              Razred
-            </label>
-            <input
-              id="grade_level"
-              type="number"
-              required
-              min={1}
-              value={gradeLevel}
-              onChange={(event) => setGradeLevel(event.target.value)}
-              className="mt-1 rounded border border-gray-300 px-3 py-2"
-            />
-          </div>
-        </div>
-
-        <button
-          type="submit"
-          disabled={submitting}
-          className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
+      {showForm && (
+        <form
+          onSubmit={handleCreate}
+          className="space-y-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
         >
-          {submitting ? 'Kreiranje...' : 'Kreiraj odeljenje'}
-        </button>
-      </form>
+          <div className="flex items-center justify-between">
+            <h2 className="font-medium">Novo odeljenje</h2>
+            <button
+              type="button"
+              onClick={() => setShowForm(false)}
+              className="text-sm text-gray-500 hover:text-gray-700"
+            >
+              Otkaži
+            </button>
+          </div>
+
+          {successMessage && (
+            <p className="rounded bg-green-50 p-2 text-sm text-green-700">{successMessage}</p>
+          )}
+          {formError && (
+            <div className="rounded bg-red-50 p-2 text-sm text-red-700">
+              <p>{formError.message}</p>
+              {formError.errors &&
+                Object.values(formError.errors)
+                  .flat()
+                  .map((message) => <p key={message}>{message}</p>)}
+            </div>
+          )}
+
+          <div className="flex flex-wrap gap-4">
+            <div>
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                Naziv
+              </label>
+              <input
+                id="name"
+                type="text"
+                required
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                className="mt-1 rounded border border-gray-300 px-3 py-2"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="grade_level" className="block text-sm font-medium text-gray-700">
+                Razred
+              </label>
+              <input
+                id="grade_level"
+                type="number"
+                required
+                min={1}
+                value={gradeLevel}
+                onChange={(event) => setGradeLevel(event.target.value)}
+                className="mt-1 rounded border border-gray-300 px-3 py-2"
+              />
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={submitting}
+            className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
+          >
+            {submitting ? 'Kreiranje...' : 'Kreiraj odeljenje'}
+          </button>
+        </form>
+      )}
 
       <div className="space-y-3">
         <h2 className="font-medium">Spisak odeljenja</h2>
@@ -123,29 +150,35 @@ export function ClassGroupsPage() {
         {loading && <p className="text-sm text-gray-500">Učitavanje...</p>}
 
         {!loading && !listError && (
-          <table className="w-full border-collapse text-sm">
-            <thead>
-              <tr className="border-b border-gray-200 text-left">
-                <th className="py-2 pr-4">Naziv</th>
-                <th className="py-2 pr-4">Razred</th>
-              </tr>
-            </thead>
-            <tbody>
-              {classGroups.map((group) => (
-                <tr key={group.id} className="border-b border-gray-100">
-                  <td className="py-2 pr-4">{group.name}</td>
-                  <td className="py-2 pr-4">{group.grade_level}</td>
+          <div className="overflow-hidden rounded-lg border border-gray-200 shadow-sm">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50">
+                <tr className="text-left">
+                  <th className="px-4 py-3 text-xs font-semibold tracking-wide text-gray-500 uppercase">
+                    Naziv
+                  </th>
+                  <th className="px-4 py-3 text-xs font-semibold tracking-wide text-gray-500 uppercase">
+                    Razred
+                  </th>
                 </tr>
-              ))}
-              {classGroups.length === 0 && (
-                <tr>
-                  <td colSpan={2} className="py-4 text-center text-gray-500">
-                    Nema odeljenja.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-gray-100 bg-white">
+                {classGroups.map((group) => (
+                  <tr key={group.id} className="hover:bg-gray-50">
+                    <td className="px-4 py-3">{group.name}</td>
+                    <td className="px-4 py-3">{group.grade_level}</td>
+                  </tr>
+                ))}
+                {classGroups.length === 0 && (
+                  <tr>
+                    <td colSpan={2} className="px-4 py-6 text-center text-gray-500">
+                      Nema odeljenja.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>
