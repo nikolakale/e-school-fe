@@ -2,6 +2,12 @@ import { type FormEvent, useEffect, useState } from 'react'
 
 import { apiFetch, ApiError } from '@/shared/api/client'
 import { useAuthStore } from '@/shared/auth/store'
+import { Button } from '@/shared/ui/Button'
+import { Card } from '@/shared/ui/Card'
+import { Field, fieldControlClass, FormCard, FormGrid } from '@/shared/ui/Form'
+import { IconPlus } from '@/shared/ui/icons'
+import { FormErrors, Notice } from '@/shared/ui/Notice'
+import { EmptyRow, Table, Tbody, Td, Th, Tr } from '@/shared/ui/Table'
 
 import type { SchoolYear } from './types'
 
@@ -67,140 +73,107 @@ export function SchoolYearsSection() {
   }
 
   return (
-    <section className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Školske godine</h2>
+    <section>
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-[18px] font-semibold text-ink font-serif">Školske godine</h2>
         {canCreate && !showForm && (
-          <button
-            type="button"
-            onClick={() => setShowForm(true)}
-            className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-          >
-            + Dodaj školsku godinu
-          </button>
+          <Button onClick={() => setShowForm(true)}>
+            <IconPlus className="h-3.5 w-3.5" />
+            Dodaj školsku godinu
+          </Button>
         )}
       </div>
 
       {canCreate && showForm && (
-        <form
+        <FormCard
+          title="Nova školska godina"
+          onCancel={() => setShowForm(false)}
           onSubmit={handleCreate}
-          className="space-y-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
         >
-          <div className="flex items-center justify-between">
-            <h3 className="font-medium">Nova školska godina</h3>
-            <button
-              type="button"
-              onClick={() => setShowForm(false)}
-              className="text-sm text-gray-500 hover:text-gray-700"
-            >
-              Otkaži
-            </button>
-          </div>
-
           {successMessage && (
-            <p className="rounded bg-green-50 p-2 text-sm text-green-700">{successMessage}</p>
+            <div className="mb-4">
+              <Notice variant="success">{successMessage}</Notice>
+            </div>
           )}
           {formError && (
-            <div className="rounded bg-red-50 p-2 text-sm text-red-700">
-              <p>{formError.message}</p>
-              {formError.errors &&
-                Object.values(formError.errors)
-                  .flat()
-                  .map((message) => <p key={message}>{message}</p>)}
+            <div className="mb-4">
+              <FormErrors error={formError} />
             </div>
           )}
 
-          <div className="flex flex-wrap gap-4">
-            <div>
-              <label htmlFor="sy_name" className="block text-sm font-medium text-gray-700">
-                Naziv
-              </label>
+          <FormGrid>
+            <Field label="Naziv" htmlFor="sy_name">
               <input
                 id="sy_name"
                 type="text"
                 required
                 value={name}
                 onChange={(event) => setName(event.target.value)}
-                className="mt-1 rounded border border-gray-300 px-3 py-2"
+                className={fieldControlClass}
               />
-            </div>
+            </Field>
 
-            <div>
-              <label htmlFor="sy_starts_on" className="block text-sm font-medium text-gray-700">
-                Početak
-              </label>
+            <Field label="Početak" htmlFor="sy_starts_on">
               <input
                 id="sy_starts_on"
                 type="date"
                 required
                 value={startsOn}
                 onChange={(event) => setStartsOn(event.target.value)}
-                className="mt-1 rounded border border-gray-300 px-3 py-2"
+                className={fieldControlClass}
               />
-            </div>
+            </Field>
 
-            <div>
-              <label htmlFor="sy_ends_on" className="block text-sm font-medium text-gray-700">
-                Kraj
-              </label>
+            <Field label="Kraj" htmlFor="sy_ends_on">
               <input
                 id="sy_ends_on"
                 type="date"
                 required
                 value={endsOn}
                 onChange={(event) => setEndsOn(event.target.value)}
-                className="mt-1 rounded border border-gray-300 px-3 py-2"
+                className={fieldControlClass}
               />
-            </div>
-          </div>
+            </Field>
+          </FormGrid>
 
-          <button
-            type="submit"
-            disabled={submitting}
-            className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
-          >
+          <Button type="submit" disabled={submitting}>
             {submitting ? 'Kreiranje...' : 'Kreiraj školsku godinu'}
-          </button>
-        </form>
+          </Button>
+        </FormCard>
       )}
 
-      {listError && <p className="rounded bg-red-50 p-2 text-sm text-red-700">{listError}</p>}
-      {loading && <p className="text-sm text-gray-500">Učitavanje...</p>}
+      {listError && (
+        <div className="mb-3">
+          <Notice variant="danger">{listError}</Notice>
+        </div>
+      )}
 
-      {!loading && !listError && (
-        <div className="overflow-hidden rounded-lg border border-gray-200 shadow-sm">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50">
-              <tr className="text-left">
-                <th className="px-4 py-3 text-xs font-semibold tracking-wide text-gray-500 uppercase">
-                  Naziv
-                </th>
-                <th className="px-4 py-3 text-xs font-semibold tracking-wide text-gray-500 uppercase">
-                  Početak
-                </th>
-                <th className="px-4 py-3 text-xs font-semibold tracking-wide text-gray-500 uppercase">
-                  Kraj
-                </th>
+      {!listError && (
+        <Card>
+          <Table>
+            <thead>
+              <tr>
+                <Th>Naziv</Th>
+                <Th>Početak</Th>
+                <Th>Kraj</Th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100 bg-white">
-              {schoolYears.map((year) => (
-                <tr key={year.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3">{year.name}</td>
-                  <td className="px-4 py-3">{year.starts_on}</td>
-                  <td className="px-4 py-3">{year.ends_on}</td>
-                </tr>
-              ))}
-              {schoolYears.length === 0 && (
-                <tr>
-                  <td colSpan={3} className="px-4 py-6 text-center text-gray-500">
-                    Nema školskih godina.
-                  </td>
-                </tr>
+            <Tbody>
+              {loading && <EmptyRow colSpan={3}>Učitavanje...</EmptyRow>}
+              {!loading &&
+                schoolYears.map((year) => (
+                  <Tr key={year.id}>
+                    <Td className="font-semibold text-ink">{year.name}</Td>
+                    <Td>{year.starts_on}</Td>
+                    <Td>{year.ends_on}</Td>
+                  </Tr>
+                ))}
+              {!loading && schoolYears.length === 0 && (
+                <EmptyRow colSpan={3}>Nema školskih godina.</EmptyRow>
               )}
-            </tbody>
-          </table>
-        </div>
+            </Tbody>
+          </Table>
+        </Card>
       )}
     </section>
   )

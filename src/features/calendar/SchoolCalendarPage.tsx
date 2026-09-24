@@ -1,3 +1,5 @@
+import { PageHeader } from '@/shared/ui/PageHeader'
+
 import { HolidaysSection } from './HolidaysSection'
 import { SchoolYearsSection } from './SchoolYearsSection'
 import { SemestersSection } from './SemestersSection'
@@ -10,11 +12,13 @@ import { SemestersSection } from './SemestersSection'
  */
 export function SchoolCalendarPage() {
   return (
-    <div className="mx-auto max-w-4xl space-y-10 p-6">
-      <h1 className="text-xl font-semibold">Školski kalendar</h1>
-      <SchoolYearsSection />
-      <SemestersSection />
-      <HolidaysSection />
+    <div className="max-w-4xl">
+      <PageHeader eyebrow="Nastava" title="Školski kalendar" />
+      <div className="space-y-10">
+        <SchoolYearsSection />
+        <SemestersSection />
+        <HolidaysSection />
+      </div>
     </div>
   )
 }

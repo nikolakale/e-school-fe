@@ -13,6 +13,12 @@ export interface ClassGroup {
   grade_level: number
 }
 
+export interface UserParent {
+  id: number
+  name: string
+  email: string
+}
+
 export interface User {
   id: number
   name: string
@@ -20,4 +26,6 @@ export interface User {
   role: Role
   class_group: ClassGroup | null
   permissions: string[]
+  /** Always present; non-empty only when role.slug === 'ucenik'. */
+  parents: UserParent[]
 }

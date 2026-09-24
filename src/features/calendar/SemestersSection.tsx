@@ -2,6 +2,12 @@ import { type FormEvent, useEffect, useState } from 'react'
 
 import { apiFetch, ApiError } from '@/shared/api/client'
 import { useAuthStore } from '@/shared/auth/store'
+import { Button } from '@/shared/ui/Button'
+import { Card } from '@/shared/ui/Card'
+import { Field, fieldControlClass, FormCard, FormGrid } from '@/shared/ui/Form'
+import { IconPlus } from '@/shared/ui/icons'
+import { FormErrors, Notice } from '@/shared/ui/Notice'
+import { EmptyRow, Table, Tbody, Td, Th, Tr } from '@/shared/ui/Table'
 
 import type { SchoolYear, Semester } from './types'
 
@@ -114,63 +120,42 @@ export function SemestersSection() {
   }
 
   return (
-    <section className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Polugodišta</h2>
+    <section>
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-[18px] font-semibold text-ink font-serif">Polugodišta</h2>
         {canCreate && !showForm && (
-          <button
-            type="button"
-            onClick={openForm}
-            className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-          >
-            + Dodaj polugodište
-          </button>
+          <Button onClick={openForm}>
+            <IconPlus className="h-3.5 w-3.5" />
+            Dodaj polugodište
+          </Button>
         )}
       </div>
 
       {canCreate && showForm && (
-        <form
+        <FormCard
+          title="Novo polugodište"
+          onCancel={() => setShowForm(false)}
           onSubmit={handleCreate}
-          className="space-y-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
         >
-          <div className="flex items-center justify-between">
-            <h3 className="font-medium">Novo polugodište</h3>
-            <button
-              type="button"
-              onClick={() => setShowForm(false)}
-              className="text-sm text-gray-500 hover:text-gray-700"
-            >
-              Otkaži
-            </button>
-          </div>
-
           {successMessage && (
-            <p className="rounded bg-green-50 p-2 text-sm text-green-700">{successMessage}</p>
+            <div className="mb-4">
+              <Notice variant="success">{successMessage}</Notice>
+            </div>
           )}
           {formError && (
-            <div className="rounded bg-red-50 p-2 text-sm text-red-700">
-              <p>{formError.message}</p>
-              {formError.errors &&
-                Object.values(formError.errors)
-                  .flat()
-                  .map((message) => <p key={message}>{message}</p>)}
+            <div className="mb-4">
+              <FormErrors error={formError} />
             </div>
           )}
 
-          <div className="flex flex-wrap gap-4">
-            <div>
-              <label
-                htmlFor="sem_school_year_id"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Školska godina
-              </label>
+          <FormGrid>
+            <Field label="Školska godina" htmlFor="sem_school_year_id">
               <select
                 id="sem_school_year_id"
                 required
                 value={formSchoolYearId}
                 onChange={(event) => setFormSchoolYearId(event.target.value)}
-                className="mt-1 rounded border border-gray-300 px-3 py-2"
+                className={fieldControlClass}
               >
                 <option value="" disabled>
                   Izaberite školsku godinu
@@ -181,106 +166,78 @@ export function SemestersSection() {
                   </option>
                 ))}
               </select>
-            </div>
+            </Field>
 
-            <div>
-              <label htmlFor="sem_number" className="block text-sm font-medium text-gray-700">
-                Broj polugodišta
-              </label>
+            <Field label="Broj polugodišta" htmlFor="sem_number">
               <select
                 id="sem_number"
                 value={number}
                 onChange={(event) => setNumber(event.target.value as '1' | '2')}
-                className="mt-1 rounded border border-gray-300 px-3 py-2"
+                className={fieldControlClass}
               >
                 <option value="1">Prvo</option>
                 <option value="2">Drugo</option>
               </select>
-            </div>
+            </Field>
 
-            <div>
-              <label htmlFor="sem_starts_on" className="block text-sm font-medium text-gray-700">
-                Početak
-              </label>
+            <Field label="Početak" htmlFor="sem_starts_on">
               <input
                 id="sem_starts_on"
                 type="date"
                 required
                 value={startsOn}
                 onChange={(event) => setStartsOn(event.target.value)}
-                className="mt-1 rounded border border-gray-300 px-3 py-2"
+                className={fieldControlClass}
               />
-            </div>
+            </Field>
 
-            <div>
-              <label htmlFor="sem_ends_on" className="block text-sm font-medium text-gray-700">
-                Kraj
-              </label>
+            <Field label="Kraj" htmlFor="sem_ends_on">
               <input
                 id="sem_ends_on"
                 type="date"
                 required
                 value={endsOn}
                 onChange={(event) => setEndsOn(event.target.value)}
-                className="mt-1 rounded border border-gray-300 px-3 py-2"
+                className={fieldControlClass}
               />
-            </div>
+            </Field>
 
-            <div>
-              <label
-                htmlFor="sem_trimester_1_ends_on"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Kraj 1. tromesečja (opciono)
-              </label>
+            <Field label="Kraj 1. tromesečja (opciono)" htmlFor="sem_trimester_1_ends_on">
               <input
                 id="sem_trimester_1_ends_on"
                 type="date"
                 value={trimester1EndsOn}
                 onChange={(event) => setTrimester1EndsOn(event.target.value)}
-                className="mt-1 rounded border border-gray-300 px-3 py-2"
+                className={fieldControlClass}
               />
-            </div>
+            </Field>
 
-            <div>
-              <label
-                htmlFor="sem_trimester_2_ends_on"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Kraj 2. tromesečja (opciono)
-              </label>
+            <Field label="Kraj 2. tromesečja (opciono)" htmlFor="sem_trimester_2_ends_on">
               <input
                 id="sem_trimester_2_ends_on"
                 type="date"
                 value={trimester2EndsOn}
                 onChange={(event) => setTrimester2EndsOn(event.target.value)}
-                className="mt-1 rounded border border-gray-300 px-3 py-2"
+                className={fieldControlClass}
               />
-            </div>
-          </div>
+            </Field>
+          </FormGrid>
 
-          <button
-            type="submit"
-            disabled={submitting}
-            className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
-          >
+          <Button type="submit" disabled={submitting}>
             {submitting ? 'Kreiranje...' : 'Kreiraj polugodište'}
-          </button>
-        </form>
+          </Button>
+        </FormCard>
       )}
 
-      <div>
-        <label
-          htmlFor="sem_filter_school_year_id"
-          className="block text-sm font-medium text-gray-700"
-        >
+      <div className="mb-3 flex flex-col gap-1.5" style={{ maxWidth: 260 }}>
+        <label htmlFor="sem_filter_school_year_id" className="text-xs font-semibold text-ink-muted">
           Prikaži za školsku godinu
         </label>
         <select
           id="sem_filter_school_year_id"
           value={selectedSchoolYearId}
           onChange={(event) => setSelectedSchoolYearId(event.target.value)}
-          className="mt-1 rounded border border-gray-300 px-3 py-2"
+          className={fieldControlClass}
         >
           {schoolYears.length === 0 && <option value="">Nema školskih godina</option>}
           {schoolYears.map((year) => (
@@ -291,51 +248,48 @@ export function SemestersSection() {
         </select>
       </div>
 
-      {listError && <p className="rounded bg-red-50 p-2 text-sm text-red-700">{listError}</p>}
-      {loading && <p className="text-sm text-gray-500">Učitavanje...</p>}
+      {listError && (
+        <div className="mb-3">
+          <Notice variant="danger">{listError}</Notice>
+        </div>
+      )}
 
-      {!loading && !listError && (
-        <div className="overflow-hidden rounded-lg border border-gray-200 shadow-sm">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50">
-              <tr className="text-left">
-                <th className="px-4 py-3 text-xs font-semibold tracking-wide text-gray-500 uppercase">
-                  Polugodište
-                </th>
-                <th className="px-4 py-3 text-xs font-semibold tracking-wide text-gray-500 uppercase">
-                  Početak
-                </th>
-                <th className="px-4 py-3 text-xs font-semibold tracking-wide text-gray-500 uppercase">
-                  Kraj
-                </th>
-                <th className="px-4 py-3 text-xs font-semibold tracking-wide text-gray-500 uppercase">
-                  Kraj 1. trom.
-                </th>
-                <th className="px-4 py-3 text-xs font-semibold tracking-wide text-gray-500 uppercase">
-                  Kraj 2. trom.
-                </th>
+      {!listError && (
+        <Card>
+          <Table>
+            <thead>
+              <tr>
+                <Th>Polugodište</Th>
+                <Th>Početak</Th>
+                <Th>Kraj</Th>
+                <Th>Kraj 1. trom.</Th>
+                <Th>Kraj 2. trom.</Th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100 bg-white">
-              {semesters.map((semester) => (
-                <tr key={semester.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3">{semester.number === 1 ? 'Prvo' : 'Drugo'}</td>
-                  <td className="px-4 py-3">{semester.starts_on}</td>
-                  <td className="px-4 py-3">{semester.ends_on}</td>
-                  <td className="px-4 py-3">{semester.trimester_1_ends_on ?? '-'}</td>
-                  <td className="px-4 py-3">{semester.trimester_2_ends_on ?? '-'}</td>
-                </tr>
-              ))}
-              {semesters.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="px-4 py-6 text-center text-gray-500">
-                    Nema polugodišta za izabranu školsku godinu.
-                  </td>
-                </tr>
+            <Tbody>
+              {loading && <EmptyRow colSpan={5}>Učitavanje...</EmptyRow>}
+              {!loading &&
+                semesters.map((semester) => (
+                  <Tr key={semester.id}>
+                    <Td className="font-semibold text-ink">
+                      {semester.number === 1 ? 'Prvo' : 'Drugo'}
+                    </Td>
+                    <Td>{semester.starts_on}</Td>
+                    <Td>{semester.ends_on}</Td>
+                    <Td>
+                      {semester.trimester_1_ends_on ?? <span className="text-ink-faint">—</span>}
+                    </Td>
+                    <Td>
+                      {semester.trimester_2_ends_on ?? <span className="text-ink-faint">—</span>}
+                    </Td>
+                  </Tr>
+                ))}
+              {!loading && semesters.length === 0 && (
+                <EmptyRow colSpan={5}>Nema polugodišta za izabranu školsku godinu.</EmptyRow>
               )}
-            </tbody>
-          </table>
-        </div>
+            </Tbody>
+          </Table>
+        </Card>
       )}
     </section>
   )

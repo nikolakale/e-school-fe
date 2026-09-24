@@ -2,6 +2,13 @@ import { type FormEvent, useEffect, useState } from 'react'
 
 import { apiFetch, ApiError } from '@/shared/api/client'
 import type { ClassGroup } from '@/shared/auth/types'
+import { Button } from '@/shared/ui/Button'
+import { Card } from '@/shared/ui/Card'
+import { Field, fieldControlClass, FormCard, FormGrid } from '@/shared/ui/Form'
+import { IconPlus } from '@/shared/ui/icons'
+import { FormErrors, Notice } from '@/shared/ui/Notice'
+import { PageHeader } from '@/shared/ui/PageHeader'
+import { EmptyRow, Table, Tbody, Td, Th, Tr } from '@/shared/ui/Table'
 
 export function ClassGroupsPage() {
   const [classGroups, setClassGroups] = useState<ClassGroup[]>([])
@@ -59,68 +66,50 @@ export function ClassGroupsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-8 p-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Odeljenja</h1>
-        {!showForm && (
-          <button
-            type="button"
-            onClick={() => setShowForm(true)}
-            className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-          >
-            + Dodaj odeljenje
-          </button>
-        )}
-      </div>
+    <div className="max-w-3xl">
+      <PageHeader
+        eyebrow="Administracija"
+        title="Odeljenja"
+        action={
+          !showForm && (
+            <Button onClick={() => setShowForm(true)}>
+              <IconPlus className="h-3.5 w-3.5" />
+              Dodaj odeljenje
+            </Button>
+          )
+        }
+      />
 
       {showForm && (
-        <form
+        <FormCard
+          title="Novo odeljenje"
+          onCancel={() => setShowForm(false)}
           onSubmit={handleCreate}
-          className="space-y-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
         >
-          <div className="flex items-center justify-between">
-            <h2 className="font-medium">Novo odeljenje</h2>
-            <button
-              type="button"
-              onClick={() => setShowForm(false)}
-              className="text-sm text-gray-500 hover:text-gray-700"
-            >
-              Otkaži
-            </button>
-          </div>
-
           {successMessage && (
-            <p className="rounded bg-green-50 p-2 text-sm text-green-700">{successMessage}</p>
+            <div className="mb-4">
+              <Notice variant="success">{successMessage}</Notice>
+            </div>
           )}
           {formError && (
-            <div className="rounded bg-red-50 p-2 text-sm text-red-700">
-              <p>{formError.message}</p>
-              {formError.errors &&
-                Object.values(formError.errors)
-                  .flat()
-                  .map((message) => <p key={message}>{message}</p>)}
+            <div className="mb-4">
+              <FormErrors error={formError} />
             </div>
           )}
 
-          <div className="flex flex-wrap gap-4">
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                Naziv
-              </label>
+          <FormGrid>
+            <Field label="Naziv" htmlFor="name">
               <input
                 id="name"
                 type="text"
                 required
                 value={name}
                 onChange={(event) => setName(event.target.value)}
-                className="mt-1 rounded border border-gray-300 px-3 py-2"
+                className={fieldControlClass}
               />
-            </div>
+            </Field>
 
-            <div>
-              <label htmlFor="grade_level" className="block text-sm font-medium text-gray-700">
-                Razred
-              </label>
+            <Field label="Razred" htmlFor="grade_level">
               <input
                 id="grade_level"
                 type="number"
@@ -128,59 +117,48 @@ export function ClassGroupsPage() {
                 min={1}
                 value={gradeLevel}
                 onChange={(event) => setGradeLevel(event.target.value)}
-                className="mt-1 rounded border border-gray-300 px-3 py-2"
+                className={fieldControlClass}
               />
-            </div>
-          </div>
+            </Field>
+          </FormGrid>
 
-          <button
-            type="submit"
-            disabled={submitting}
-            className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
-          >
+          <Button type="submit" disabled={submitting}>
             {submitting ? 'Kreiranje...' : 'Kreiraj odeljenje'}
-          </button>
-        </form>
+          </Button>
+        </FormCard>
       )}
 
-      <div className="space-y-3">
-        <h2 className="font-medium">Spisak odeljenja</h2>
+      {listError && (
+        <div className="mb-3">
+          <Notice variant="danger">{listError}</Notice>
+        </div>
+      )}
 
-        {listError && <p className="rounded bg-red-50 p-2 text-sm text-red-700">{listError}</p>}
-        {loading && <p className="text-sm text-gray-500">Učitavanje...</p>}
-
-        {!loading && !listError && (
-          <div className="overflow-hidden rounded-lg border border-gray-200 shadow-sm">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50">
-                <tr className="text-left">
-                  <th className="px-4 py-3 text-xs font-semibold tracking-wide text-gray-500 uppercase">
-                    Naziv
-                  </th>
-                  <th className="px-4 py-3 text-xs font-semibold tracking-wide text-gray-500 uppercase">
-                    Razred
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 bg-white">
-                {classGroups.map((group) => (
-                  <tr key={group.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3">{group.name}</td>
-                    <td className="px-4 py-3">{group.grade_level}</td>
-                  </tr>
+      {!listError && (
+        <Card>
+          <Table>
+            <thead>
+              <tr>
+                <Th>Naziv</Th>
+                <Th>Razred</Th>
+              </tr>
+            </thead>
+            <Tbody>
+              {loading && <EmptyRow colSpan={2}>Učitavanje...</EmptyRow>}
+              {!loading &&
+                classGroups.map((group) => (
+                  <Tr key={group.id}>
+                    <Td className="font-semibold text-ink">{group.name}</Td>
+                    <Td>{group.grade_level}</Td>
+                  </Tr>
                 ))}
-                {classGroups.length === 0 && (
-                  <tr>
-                    <td colSpan={2} className="px-4 py-6 text-center text-gray-500">
-                      Nema odeljenja.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+              {!loading && classGroups.length === 0 && (
+                <EmptyRow colSpan={2}>Nema odeljenja.</EmptyRow>
+              )}
+            </Tbody>
+          </Table>
+        </Card>
+      )}
     </div>
   )
 }

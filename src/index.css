@@ -1,1 +1,122 @@
 @import 'tailwindcss';
+
+/*
+ * Design tokens ported from the approved mockup (users-mockup.html): same
+ * palette, same light/dark values. Base tokens are declared inside `@theme`
+ * so Tailwind generates matching utilities (bg-surface, text-ink-muted,
+ * border-border, ...); the dark-mode blocks below redefine the same custom
+ * properties outside of any `@layer`, so - per CSS cascade-layer rules -
+ * they win over the (layered) `@theme` values whenever they apply, without
+ * needing extra specificity tricks.
+ */
+@theme {
+  --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-serif: 'Fraunces', ui-serif, Georgia, serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, monospace;
+
+  --color-bg: #f5f4ef;
+  --color-surface: #ffffff;
+  --color-surface-2: #faf9f5;
+  --color-border: #e4e1d6;
+  --color-ink: #23241f;
+  --color-ink-muted: #726e5f;
+  --color-ink-faint: #a29d8a;
+  --color-accent: #2f5d8a;
+  --color-accent-ink: #ffffff;
+  --color-accent-soft: #e7eef6;
+  --color-danger: #b5432f;
+  --color-danger-soft: #fbe9e5;
+  --color-success: #24744f;
+  --color-success-soft: #e2f3ea;
+}
+
+:root {
+  /* Role badge pairs - kept as plain custom properties (not `@theme` colors)
+     since they're looked up dynamically by role slug via inline styles. */
+  --role-ucenik-fg: #2a5da3;
+  --role-ucenik-bg: #e6eefb;
+  --role-nastavnik-fg: #24744f;
+  --role-nastavnik-bg: #e2f3ea;
+  --role-razredni-fg: #0d7d73;
+  --role-razredni-bg: #dff4f1;
+  --role-direktor-fg: #6c3fac;
+  --role-direktor-bg: #efe6fa;
+  --role-strucni-fg: #9c6207;
+  --role-strucni-bg: #faeed6;
+  --role-roditelj-fg: #ac3f6c;
+  --role-roditelj-bg: #fae5ed;
+
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --color-bg: #1b1c1f;
+    --color-surface: #232428;
+    --color-surface-2: #1f2023;
+    --color-border: #35373b;
+    --color-ink: #eeece4;
+    --color-ink-muted: #a6a396;
+    --color-ink-faint: #706d61;
+    --color-accent: #7fa8d6;
+    --color-accent-ink: #12202f;
+    --color-accent-soft: #223447;
+    --color-danger: #e0836f;
+    --color-danger-soft: #3a2621;
+    --color-success: #a6d9bd;
+    --color-success-soft: #1f3a2c;
+
+    --role-ucenik-fg: #a9c7ec;
+    --role-ucenik-bg: #21354c;
+    --role-nastavnik-fg: #a6d9bd;
+    --role-nastavnik-bg: #1f3a2c;
+    --role-razredni-fg: #92ddd2;
+    --role-razredni-bg: #163632;
+    --role-direktor-fg: #cbabf0;
+    --role-direktor-bg: #322546;
+    --role-strucni-fg: #e8c383;
+    --role-strucni-bg: #3c2f14;
+    --role-roditelj-fg: #eca9c4;
+    --role-roditelj-bg: #3c2130;
+
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme='dark'] {
+  --color-bg: #1b1c1f;
+  --color-surface: #232428;
+  --color-surface-2: #1f2023;
+  --color-border: #35373b;
+  --color-ink: #eeece4;
+  --color-ink-muted: #a6a396;
+  --color-ink-faint: #706d61;
+  --color-accent: #7fa8d6;
+  --color-accent-ink: #12202f;
+  --color-accent-soft: #223447;
+  --color-danger: #e0836f;
+  --color-danger-soft: #3a2621;
+  --color-success: #a6d9bd;
+  --color-success-soft: #1f3a2c;
+
+  --role-ucenik-fg: #a9c7ec;
+  --role-ucenik-bg: #21354c;
+  --role-nastavnik-fg: #a6d9bd;
+  --role-nastavnik-bg: #1f3a2c;
+  --role-razredni-fg: #92ddd2;
+  --role-razredni-bg: #163632;
+  --role-direktor-fg: #cbabf0;
+  --role-direktor-bg: #322546;
+  --role-strucni-fg: #e8c383;
+  --role-strucni-bg: #3c2f14;
+  --role-roditelj-fg: #eca9c4;
+  --role-roditelj-bg: #3c2130;
+
+  color-scheme: dark;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}

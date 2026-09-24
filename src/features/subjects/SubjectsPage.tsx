@@ -3,6 +3,13 @@ import { Link } from 'react-router-dom'
 
 import { apiFetch, ApiError } from '@/shared/api/client'
 import { useAuthStore } from '@/shared/auth/store'
+import { Button } from '@/shared/ui/Button'
+import { Card } from '@/shared/ui/Card'
+import { Field, fieldControlClass, FormCard, FormGrid } from '@/shared/ui/Form'
+import { IconPlus } from '@/shared/ui/icons'
+import { FormErrors, Notice } from '@/shared/ui/Notice'
+import { PageHeader } from '@/shared/ui/PageHeader'
+import { EmptyRow, Table, Tbody, Td, Th, Tr } from '@/shared/ui/Table'
 
 export interface Subject {
   id: number
@@ -70,120 +77,89 @@ export function SubjectsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-8 p-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Predmeti</h1>
-        {canCreate && !showForm && (
-          <button
-            type="button"
-            onClick={() => setShowForm(true)}
-            className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-          >
-            + Dodaj predmet
-          </button>
-        )}
-      </div>
+    <div className="max-w-3xl">
+      <PageHeader
+        eyebrow="Nastava"
+        title="Predmeti"
+        action={
+          canCreate &&
+          !showForm && (
+            <Button onClick={() => setShowForm(true)}>
+              <IconPlus className="h-3.5 w-3.5" />
+              Dodaj predmet
+            </Button>
+          )
+        }
+      />
 
       {canCreate && showForm && (
-        <form
-          onSubmit={handleCreate}
-          className="space-y-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
-        >
-          <div className="flex items-center justify-between">
-            <h2 className="font-medium">Novi predmet</h2>
-            <button
-              type="button"
-              onClick={() => setShowForm(false)}
-              className="text-sm text-gray-500 hover:text-gray-700"
-            >
-              Otkaži
-            </button>
-          </div>
-
+        <FormCard title="Novi predmet" onCancel={() => setShowForm(false)} onSubmit={handleCreate}>
           {successMessage && (
-            <p className="rounded bg-green-50 p-2 text-sm text-green-700">{successMessage}</p>
+            <div className="mb-4">
+              <Notice variant="success">{successMessage}</Notice>
+            </div>
           )}
           {formError && (
-            <div className="rounded bg-red-50 p-2 text-sm text-red-700">
-              <p>{formError.message}</p>
-              {formError.errors &&
-                Object.values(formError.errors)
-                  .flat()
-                  .map((message) => <p key={message}>{message}</p>)}
+            <div className="mb-4">
+              <FormErrors error={formError} />
             </div>
           )}
 
-          <div className="flex flex-wrap gap-4">
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                Naziv
-              </label>
+          <FormGrid>
+            <Field label="Naziv" htmlFor="name">
               <input
                 id="name"
                 type="text"
                 required
                 value={name}
                 onChange={(event) => setName(event.target.value)}
-                className="mt-1 rounded border border-gray-300 px-3 py-2"
+                className={fieldControlClass}
               />
-            </div>
-          </div>
+            </Field>
+          </FormGrid>
 
-          <button
-            type="submit"
-            disabled={submitting}
-            className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
-          >
+          <Button type="submit" disabled={submitting}>
             {submitting ? 'Kreiranje...' : 'Kreiraj predmet'}
-          </button>
-        </form>
+          </Button>
+        </FormCard>
       )}
 
-      <div className="space-y-3">
-        <h2 className="font-medium">Spisak predmeta</h2>
+      {listError && (
+        <div className="mb-3">
+          <Notice variant="danger">{listError}</Notice>
+        </div>
+      )}
 
-        {listError && <p className="rounded bg-red-50 p-2 text-sm text-red-700">{listError}</p>}
-        {loading && <p className="text-sm text-gray-500">Učitavanje...</p>}
-
-        {!loading && !listError && (
-          <div className="overflow-hidden rounded-lg border border-gray-200 shadow-sm">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50">
-                <tr className="text-left">
-                  <th className="px-4 py-3 text-xs font-semibold tracking-wide text-gray-500 uppercase">
-                    Naziv
-                  </th>
-                  <th className="px-4 py-3 text-xs font-semibold tracking-wide text-gray-500 uppercase">
-                    Lekcije
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 bg-white">
-                {subjects.map((subject) => (
-                  <tr key={subject.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3">{subject.name}</td>
-                    <td className="px-4 py-3">
+      {!listError && (
+        <Card>
+          <Table>
+            <thead>
+              <tr>
+                <Th>Naziv</Th>
+                <Th>Lekcije</Th>
+              </tr>
+            </thead>
+            <Tbody>
+              {loading && <EmptyRow colSpan={2}>Učitavanje...</EmptyRow>}
+              {!loading &&
+                subjects.map((subject) => (
+                  <Tr key={subject.id}>
+                    <Td className="font-semibold text-ink">{subject.name}</Td>
+                    <Td>
                       <Link
                         to={`/subjects/${subject.id}/lessons`}
-                        className="text-blue-600 hover:text-blue-800 hover:underline"
+                        className="font-medium text-accent hover:underline"
                       >
                         Prikaži lekcije
                       </Link>
-                    </td>
-                  </tr>
+                    </Td>
+                  </Tr>
                 ))}
-                {subjects.length === 0 && (
-                  <tr>
-                    <td colSpan={2} className="px-4 py-6 text-center text-gray-500">
-                      Nema predmeta.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+              {!loading && subjects.length === 0 && <EmptyRow colSpan={2}>Nema predmeta.</EmptyRow>}
+            </Tbody>
+          </Table>
+        </Card>
+      )}
     </div>
   )
 }

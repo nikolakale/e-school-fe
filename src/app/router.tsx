@@ -1,7 +1,6 @@
 import { createBrowserRouter } from 'react-router-dom'
 
 import { ClassGroupsPage } from '@/features/admin/ClassGroupsPage'
-import { ParentInvitationsPage } from '@/features/admin/ParentInvitationsPage'
 import { UsersPage } from '@/features/admin/UsersPage'
 import { AcceptParentInvitationPage } from '@/features/auth/AcceptParentInvitationPage'
 import { LoginPage } from '@/features/auth/LoginPage'
@@ -47,16 +46,6 @@ export const router = createBrowserRouter([
           <RequireAuth>
             <RequireRole roles={['direktor']}>
               <ClassGroupsPage />
-            </RequireRole>
-          </RequireAuth>
-        ),
-      },
-      {
-        path: 'admin/parent-invitations',
-        element: (
-          <RequireAuth>
-            <RequireRole roles={['direktor', 'razredni_staresina']}>
-              <ParentInvitationsPage />
             </RequireRole>
           </RequireAuth>
         ),

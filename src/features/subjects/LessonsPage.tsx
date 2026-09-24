@@ -2,6 +2,10 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 
 import { apiFetch, ApiError } from '@/shared/api/client'
+import { Card } from '@/shared/ui/Card'
+import { Notice } from '@/shared/ui/Notice'
+import { PageHeader } from '@/shared/ui/PageHeader'
+import { EmptyRow, Table, Tbody, Td, Th, Tr } from '@/shared/ui/Table'
 
 interface Lesson {
   id: number
@@ -40,54 +44,48 @@ export function LessonsPage() {
   }, [subjectId])
 
   return (
-    <div className="mx-auto max-w-2xl space-y-8 p-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Lekcije</h1>
-        <Link to="/subjects" className="text-sm text-blue-600 hover:text-blue-800 hover:underline">
-          Nazad na predmete
-        </Link>
-      </div>
+    <div className="max-w-3xl">
+      <PageHeader
+        eyebrow="Nastava"
+        title="Lekcije"
+        action={
+          <Link to="/subjects" className="text-[13.5px] font-semibold text-accent hover:underline">
+            Nazad na predmete
+          </Link>
+        }
+      />
 
-      <div className="space-y-3">
-        {listError && <p className="rounded bg-red-50 p-2 text-sm text-red-700">{listError}</p>}
-        {loading && <p className="text-sm text-gray-500">Učitavanje...</p>}
+      {listError && (
+        <div className="mb-3">
+          <Notice variant="danger">{listError}</Notice>
+        </div>
+      )}
 
-        {!loading && !listError && (
-          <div className="overflow-hidden rounded-lg border border-gray-200 shadow-sm">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50">
-                <tr className="text-left">
-                  <th className="px-4 py-3 text-xs font-semibold tracking-wide text-gray-500 uppercase">
-                    Br.
-                  </th>
-                  <th className="px-4 py-3 text-xs font-semibold tracking-wide text-gray-500 uppercase">
-                    Naziv
-                  </th>
-                  <th className="px-4 py-3 text-xs font-semibold tracking-wide text-gray-500 uppercase">
-                    Broj pitanja
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 bg-white">
-                {lessons.map((lesson) => (
-                  <tr key={lesson.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3">{lesson.number}</td>
-                    <td className="px-4 py-3">{lesson.name}</td>
-                    <td className="px-4 py-3">{lesson.question_count}</td>
-                  </tr>
+      {!listError && (
+        <Card>
+          <Table>
+            <thead>
+              <tr>
+                <Th>Br.</Th>
+                <Th>Naziv</Th>
+                <Th>Broj pitanja</Th>
+              </tr>
+            </thead>
+            <Tbody>
+              {loading && <EmptyRow colSpan={3}>Učitavanje...</EmptyRow>}
+              {!loading &&
+                lessons.map((lesson) => (
+                  <Tr key={lesson.id}>
+                    <Td className="font-mono text-ink-muted">{lesson.number}</Td>
+                    <Td className="font-semibold text-ink">{lesson.name}</Td>
+                    <Td>{lesson.question_count}</Td>
+                  </Tr>
                 ))}
-                {lessons.length === 0 && (
-                  <tr>
-                    <td colSpan={3} className="px-4 py-6 text-center text-gray-500">
-                      Nema lekcija.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+              {!loading && lessons.length === 0 && <EmptyRow colSpan={3}>Nema lekcija.</EmptyRow>}
+            </Tbody>
+          </Table>
+        </Card>
+      )}
     </div>
   )
 }

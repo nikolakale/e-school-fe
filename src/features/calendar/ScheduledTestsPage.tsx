@@ -3,6 +3,13 @@ import { Fragment, type FormEvent, useEffect, useState } from 'react'
 import { apiFetch, ApiError } from '@/shared/api/client'
 import { useAuthStore } from '@/shared/auth/store'
 import type { ClassGroup } from '@/shared/auth/types'
+import { Button } from '@/shared/ui/Button'
+import { Card } from '@/shared/ui/Card'
+import { Field, fieldControlClass, FormCard, FormGrid } from '@/shared/ui/Form'
+import { IconInfo, IconPlus } from '@/shared/ui/icons'
+import { FormErrors, Notice } from '@/shared/ui/Notice'
+import { PageHeader } from '@/shared/ui/PageHeader'
+import { EmptyRow, Table, Tbody, Td, Th, Tr } from '@/shared/ui/Table'
 
 import {
   SCHEDULED_TEST_TYPE_LABELS,
@@ -253,61 +260,49 @@ export function ScheduledTestsPage() {
     }
   }
 
+  const columnCount = canSchedule ? 8 : 7
+
   return (
-    <div className="mx-auto max-w-4xl space-y-8 p-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Zakazani testovi</h1>
-        {canSchedule && !showForm && (
-          <button
-            type="button"
-            onClick={openForm}
-            className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-          >
-            + Zakazivanje testa
-          </button>
-        )}
-      </div>
+    <div className="max-w-4xl">
+      <PageHeader
+        eyebrow="Nastava"
+        title="Zakazani testovi"
+        action={
+          canSchedule &&
+          !showForm && (
+            <Button onClick={openForm}>
+              <IconPlus className="h-3.5 w-3.5" />
+              Zakazivanje testa
+            </Button>
+          )
+        }
+      />
 
       {canSchedule && showForm && (
-        <form
+        <FormCard
+          title="Zakazivanje testa"
+          onCancel={() => setShowForm(false)}
           onSubmit={handleCreate}
-          className="space-y-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
         >
-          <div className="flex items-center justify-between">
-            <h2 className="font-medium">Zakazivanje testa</h2>
-            <button
-              type="button"
-              onClick={() => setShowForm(false)}
-              className="text-sm text-gray-500 hover:text-gray-700"
-            >
-              Otkaži
-            </button>
-          </div>
-
           {successMessage && (
-            <p className="rounded bg-green-50 p-2 text-sm text-green-700">{successMessage}</p>
+            <div className="mb-4">
+              <Notice variant="success">{successMessage}</Notice>
+            </div>
           )}
           {formError && (
-            <div className="rounded bg-red-50 p-2 text-sm text-red-700">
-              <p>{formError.message}</p>
-              {formError.errors &&
-                Object.values(formError.errors)
-                  .flat()
-                  .map((message) => <p key={message}>{message}</p>)}
+            <div className="mb-4">
+              <FormErrors error={formError} />
             </div>
           )}
 
-          <div className="flex flex-wrap gap-4">
-            <div>
-              <label htmlFor="st_subject_id" className="block text-sm font-medium text-gray-700">
-                Predmet
-              </label>
+          <FormGrid>
+            <Field label="Predmet" htmlFor="st_subject_id">
               <select
                 id="st_subject_id"
                 required
                 value={subjectId}
                 onChange={(event) => setSubjectId(event.target.value)}
-                className="mt-1 rounded border border-gray-300 px-3 py-2"
+                className={fieldControlClass}
               >
                 <option value="" disabled>
                   Izaberite predmet
@@ -318,21 +313,15 @@ export function ScheduledTestsPage() {
                   </option>
                 ))}
               </select>
-            </div>
+            </Field>
 
-            <div>
-              <label
-                htmlFor="st_class_group_id"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Odeljenje
-              </label>
+            <Field label="Odeljenje" htmlFor="st_class_group_id">
               <select
                 id="st_class_group_id"
                 required
                 value={formClassGroupId}
                 onChange={(event) => setFormClassGroupId(event.target.value)}
-                className="mt-1 rounded border border-gray-300 px-3 py-2"
+                className={fieldControlClass}
               >
                 <option value="" disabled>
                   Izaberite odeljenje
@@ -343,18 +332,15 @@ export function ScheduledTestsPage() {
                   </option>
                 ))}
               </select>
-            </div>
+            </Field>
 
-            <div>
-              <label htmlFor="st_semester_id" className="block text-sm font-medium text-gray-700">
-                Semestar
-              </label>
+            <Field label="Semestar" htmlFor="st_semester_id">
               <select
                 id="st_semester_id"
                 required
                 value={semesterId}
                 onChange={(event) => setSemesterId(event.target.value)}
-                className="mt-1 rounded border border-gray-300 px-3 py-2"
+                className={fieldControlClass}
               >
                 <option value="" disabled>
                   Izaberite semestar
@@ -365,17 +351,14 @@ export function ScheduledTestsPage() {
                   </option>
                 ))}
               </select>
-            </div>
+            </Field>
 
-            <div>
-              <label htmlFor="st_type" className="block text-sm font-medium text-gray-700">
-                Tip
-              </label>
+            <Field label="Tip" htmlFor="st_type">
               <select
                 id="st_type"
                 value={type}
                 onChange={(event) => setType(event.target.value as ScheduledTestType)}
-                className="mt-1 rounded border border-gray-300 px-3 py-2"
+                className={fieldControlClass}
               >
                 {TEST_TYPES.map((testType) => (
                   <option key={testType} value={testType}>
@@ -383,82 +366,62 @@ export function ScheduledTestsPage() {
                   </option>
                 ))}
               </select>
-            </div>
+            </Field>
 
-            <div>
-              <label
-                htmlFor="st_available_from"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Dostupan od
-              </label>
+            <Field label="Dostupan od" htmlFor="st_available_from">
               <input
                 id="st_available_from"
                 type="datetime-local"
                 required
                 value={availableFrom}
                 onChange={(event) => setAvailableFrom(event.target.value)}
-                className="mt-1 rounded border border-gray-300 px-3 py-2"
+                className={fieldControlClass}
               />
-            </div>
+            </Field>
 
-            <div>
-              <label
-                htmlFor="st_available_until"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Dostupan do
-              </label>
+            <Field label="Dostupan do" htmlFor="st_available_until">
               <input
                 id="st_available_until"
                 type="datetime-local"
                 required
                 value={availableUntil}
                 onChange={(event) => setAvailableUntil(event.target.value)}
-                className="mt-1 rounded border border-gray-300 px-3 py-2"
+                className={fieldControlClass}
               />
-            </div>
+            </Field>
 
-            <div>
-              <label
-                htmlFor="st_duration_minutes"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Trajanje (min, opciono)
-              </label>
+            <Field label="Trajanje (min, opciono)" htmlFor="st_duration_minutes">
               <input
                 id="st_duration_minutes"
                 type="number"
                 min={1}
                 value={durationMinutes}
                 onChange={(event) => setDurationMinutes(event.target.value)}
-                className="mt-1 rounded border border-gray-300 px-3 py-2"
+                className={fieldControlClass}
               />
-            </div>
-          </div>
+            </Field>
+          </FormGrid>
 
-          <div className="flex flex-wrap items-end gap-4">
+          <div className="mb-4 flex flex-wrap items-end gap-4">
             <div className="flex items-center gap-2">
               <input
                 id="st_retake_allowed"
                 type="checkbox"
                 checked={retakeAllowed}
                 onChange={(event) => setRetakeAllowed(event.target.checked)}
-                className="h-4 w-4 rounded border-gray-300"
+                className="h-4 w-4 rounded border-border"
               />
-              <label htmlFor="st_retake_allowed" className="text-sm font-medium text-gray-700">
+              <label htmlFor="st_retake_allowed" className="text-[13.5px] font-medium text-ink">
                 Popravni dozvoljen
               </label>
             </div>
 
             {retakeAllowed && (
-              <div>
-                <label
-                  htmlFor="st_retake_wait_days"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Dana čekanja do popravnog
-                </label>
+              <Field
+                label="Dana čekanja do popravnog"
+                htmlFor="st_retake_wait_days"
+                style={{ flex: '0 1 200px' }}
+              >
                 <input
                   id="st_retake_wait_days"
                   type="number"
@@ -466,31 +429,27 @@ export function ScheduledTestsPage() {
                   min={0}
                   value={retakeWaitDays}
                   onChange={(event) => setRetakeWaitDays(event.target.value)}
-                  className="mt-1 rounded border border-gray-300 px-3 py-2"
+                  className={fieldControlClass}
                 />
-              </div>
+              </Field>
             )}
           </div>
 
-          <button
-            type="submit"
-            disabled={submitting}
-            className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
-          >
+          <Button type="submit" disabled={submitting}>
             {submitting ? 'Zakazivanje...' : 'Zakaži test'}
-          </button>
-        </form>
+          </Button>
+        </FormCard>
       )}
 
-      <div>
-        <label htmlFor="st_class_group_filter" className="block text-sm font-medium text-gray-700">
+      <div className="mb-4 flex flex-col gap-1.5" style={{ maxWidth: 260 }}>
+        <label htmlFor="st_class_group_filter" className="text-xs font-semibold text-ink-muted">
           Odeljenje
         </label>
         <select
           id="st_class_group_filter"
           value={selectedClassGroupId}
           onChange={(event) => setSelectedClassGroupId(event.target.value)}
-          className="mt-1 rounded border border-gray-300 px-3 py-2"
+          className={fieldControlClass}
         >
           {classGroups.length === 0 && <option value="">Nema odeljenja</option>}
           {classGroups.map((group) => (
@@ -502,168 +461,129 @@ export function ScheduledTestsPage() {
       </div>
 
       {holidays.length > 0 && (
-        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-          <p className="font-medium">Praznici u tekućoj školskoj godini</p>
-          <ul className="mt-1 list-inside list-disc">
-            {holidays.map((holiday) => (
-              <li key={holiday.id}>
-                {holiday.name}: {holiday.starts_on} - {holiday.ends_on}
-              </li>
-            ))}
-          </ul>
+        <div className="mb-4 flex max-w-xl gap-2.5 rounded-lg border border-dashed border-border px-3.5 py-3 text-[12.5px] text-ink-muted">
+          <IconInfo className="mt-0.5 h-4 w-4 shrink-0 text-ink-faint" />
+          <div>
+            <p className="font-semibold text-ink">Praznici u tekućoj školskoj godini</p>
+            <ul className="mt-1 list-inside list-disc">
+              {holidays.map((holiday) => (
+                <li key={holiday.id}>
+                  {holiday.name}: {holiday.starts_on} - {holiday.ends_on}
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       )}
 
-      <div className="space-y-3">
-        {listError && <p className="rounded bg-red-50 p-2 text-sm text-red-700">{listError}</p>}
-        {loading && <p className="text-sm text-gray-500">Učitavanje...</p>}
+      {listError && (
+        <div className="mb-3">
+          <Notice variant="danger">{listError}</Notice>
+        </div>
+      )}
 
-        {!loading && !listError && (
-          <div className="overflow-hidden rounded-lg border border-gray-200 shadow-sm">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50">
-                <tr className="text-left">
-                  <th className="px-4 py-3 text-xs font-semibold tracking-wide text-gray-500 uppercase">
-                    Predmet
-                  </th>
-                  <th className="px-4 py-3 text-xs font-semibold tracking-wide text-gray-500 uppercase">
-                    Tip
-                  </th>
-                  <th className="px-4 py-3 text-xs font-semibold tracking-wide text-gray-500 uppercase">
-                    Dostupan od
-                  </th>
-                  <th className="px-4 py-3 text-xs font-semibold tracking-wide text-gray-500 uppercase">
-                    Dostupan do
-                  </th>
-                  <th className="px-4 py-3 text-xs font-semibold tracking-wide text-gray-500 uppercase">
-                    Trajanje
-                  </th>
-                  <th className="px-4 py-3 text-xs font-semibold tracking-wide text-gray-500 uppercase">
-                    Popravni
-                  </th>
-                  <th className="px-4 py-3 text-xs font-semibold tracking-wide text-gray-500 uppercase">
-                    Zakazao
-                  </th>
-                  {canSchedule && (
-                    <th className="px-4 py-3 text-xs font-semibold tracking-wide text-gray-500 uppercase" />
-                  )}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 bg-white">
-                {tests.map((test) => (
+      {!listError && (
+        <Card>
+          <Table>
+            <thead>
+              <tr>
+                <Th>Predmet</Th>
+                <Th>Tip</Th>
+                <Th>Dostupan od</Th>
+                <Th>Dostupan do</Th>
+                <Th>Trajanje</Th>
+                <Th>Popravni</Th>
+                <Th>Zakazao</Th>
+                {canSchedule && <Th />}
+              </tr>
+            </thead>
+            <Tbody>
+              {loading && <EmptyRow colSpan={columnCount}>Učitavanje...</EmptyRow>}
+              {!loading &&
+                tests.map((test) => (
                   <Fragment key={test.id}>
-                    <tr className="hover:bg-gray-50">
-                      <td className="px-4 py-3">{test.subject.name}</td>
-                      <td className="px-4 py-3">{SCHEDULED_TEST_TYPE_LABELS[test.type]}</td>
-                      <td className="px-4 py-3">
-                        {new Date(test.available_from).toLocaleString('sr-RS')}
-                      </td>
-                      <td className="px-4 py-3">
-                        {new Date(test.available_until).toLocaleString('sr-RS')}
-                      </td>
-                      <td className="px-4 py-3">{test.duration_minutes ?? '-'}</td>
-                      <td className="px-4 py-3">
+                    <Tr>
+                      <Td className="font-semibold text-ink">{test.subject.name}</Td>
+                      <Td>{SCHEDULED_TEST_TYPE_LABELS[test.type]}</Td>
+                      <Td>{new Date(test.available_from).toLocaleString('sr-RS')}</Td>
+                      <Td>{new Date(test.available_until).toLocaleString('sr-RS')}</Td>
+                      <Td>{test.duration_minutes ?? <span className="text-ink-faint">—</span>}</Td>
+                      <Td>
                         {test.retake_allowed ? `Da (${test.retake_wait_days ?? '-'} d.)` : 'Ne'}
-                      </td>
-                      <td className="px-4 py-3">{test.scheduled_by.name}</td>
+                      </Td>
+                      <Td>{test.scheduled_by.name}</Td>
                       {canSchedule && (
-                        <td className="px-4 py-3">
+                        <Td className="text-right">
                           <button
                             type="button"
                             onClick={() => openReschedule(test)}
-                            className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                            className="text-[12.5px] font-semibold text-accent hover:underline"
                           >
                             Pomeri
                           </button>
-                        </td>
+                        </Td>
                       )}
-                    </tr>
+                    </Tr>
                     {rescheduleId === test.id && (
-                      <tr className="bg-gray-50">
-                        <td colSpan={canSchedule ? 8 : 7} className="px-4 py-3">
+                      <tr className="bg-surface-2">
+                        <Td className="!py-3.5" colSpan={columnCount}>
                           <form
                             onSubmit={handleReschedule}
-                            className="flex flex-wrap items-end gap-4"
+                            className="flex flex-wrap items-end gap-3.5"
                           >
                             {rescheduleError && (
-                              <div className="w-full rounded bg-red-50 p-2 text-sm text-red-700">
-                                <p>{rescheduleError.message}</p>
-                                {rescheduleError.errors &&
-                                  Object.values(rescheduleError.errors)
-                                    .flat()
-                                    .map((message) => <p key={message}>{message}</p>)}
+                              <div className="w-full">
+                                <FormErrors error={rescheduleError} />
                               </div>
                             )}
 
-                            <div>
-                              <label
-                                htmlFor={`reschedule_from_${test.id}`}
-                                className="block text-sm font-medium text-gray-700"
-                              >
-                                Dostupan od
-                              </label>
+                            <Field label="Dostupan od" htmlFor={`reschedule_from_${test.id}`}>
                               <input
                                 id={`reschedule_from_${test.id}`}
                                 type="datetime-local"
                                 required
                                 value={rescheduleFrom}
                                 onChange={(event) => setRescheduleFrom(event.target.value)}
-                                className="mt-1 rounded border border-gray-300 px-3 py-2"
+                                className={fieldControlClass}
                               />
-                            </div>
+                            </Field>
 
-                            <div>
-                              <label
-                                htmlFor={`reschedule_until_${test.id}`}
-                                className="block text-sm font-medium text-gray-700"
-                              >
-                                Dostupan do
-                              </label>
+                            <Field label="Dostupan do" htmlFor={`reschedule_until_${test.id}`}>
                               <input
                                 id={`reschedule_until_${test.id}`}
                                 type="datetime-local"
                                 required
                                 value={rescheduleUntil}
                                 onChange={(event) => setRescheduleUntil(event.target.value)}
-                                className="mt-1 rounded border border-gray-300 px-3 py-2"
+                                className={fieldControlClass}
                               />
-                            </div>
+                            </Field>
 
-                            <button
-                              type="submit"
-                              disabled={rescheduling}
-                              className="rounded bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-50"
-                            >
+                            <Button type="submit" disabled={rescheduling}>
                               {rescheduling ? 'Čuvanje...' : 'Sačuvaj'}
-                            </button>
-                            <button
+                            </Button>
+                            <Button
                               type="button"
+                              variant="text"
                               onClick={() => setRescheduleId(null)}
-                              className="text-sm text-gray-500 hover:text-gray-700"
                             >
                               Otkaži
-                            </button>
+                            </Button>
                           </form>
-                        </td>
+                        </Td>
                       </tr>
                     )}
                   </Fragment>
                 ))}
-                {tests.length === 0 && (
-                  <tr>
-                    <td
-                      colSpan={canSchedule ? 8 : 7}
-                      className="px-4 py-6 text-center text-gray-500"
-                    >
-                      Nema zakazanih testova za izabrano odeljenje.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+              {!loading && tests.length === 0 && (
+                <EmptyRow colSpan={columnCount}>
+                  Nema zakazanih testova za izabrano odeljenje.
+                </EmptyRow>
+              )}
+            </Tbody>
+          </Table>
+        </Card>
+      )}
     </div>
   )
 }
