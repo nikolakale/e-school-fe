@@ -109,7 +109,13 @@ export function TakeTestPage() {
 
   async function handleSubmit() {
     if (!attempt || attempt.is_submitted) return
-    if (!window.confirm('Da li želiš da predaš test? Ovo se ne može poništiti.')) return
+
+    const unanswered = attempt.questions.length - attempt.answers.length
+    const confirmMessage =
+      unanswered > 0
+        ? `Niste odgovorili na ${unanswered} od ${attempt.questions.length} pitanja. Da li ipak želite da predate test? Ovo se ne može poništiti.`
+        : 'Da li želiš da predaš test? Ovo se ne može poništiti.'
+    if (!window.confirm(confirmMessage)) return
 
     setSubmitError(null)
     setSubmitting(true)
