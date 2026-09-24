@@ -6,6 +6,8 @@ import { UsersPage } from '@/features/admin/UsersPage'
 import { AcceptParentInvitationPage } from '@/features/auth/AcceptParentInvitationPage'
 import { LoginPage } from '@/features/auth/LoginPage'
 import { SetPasswordPage } from '@/features/auth/SetPasswordPage'
+import { ScheduledTestsPage } from '@/features/calendar/ScheduledTestsPage'
+import { SchoolCalendarPage } from '@/features/calendar/SchoolCalendarPage'
 import { HomePage } from '@/features/home/HomePage'
 import { LessonsPage } from '@/features/subjects/LessonsPage'
 import { SubjectsPage } from '@/features/subjects/SubjectsPage'
@@ -72,6 +74,22 @@ export const router = createBrowserRouter([
         element: (
           <RequireAuth>
             <LessonsPage />
+          </RequireAuth>
+        ),
+      },
+      {
+        path: 'calendar',
+        element: (
+          <RequireAuth>
+            <SchoolCalendarPage />
+          </RequireAuth>
+        ),
+      },
+      {
+        path: 'scheduled-tests',
+        element: (
+          <RequireAuth>
+            <ScheduledTestsPage />
           </RequireAuth>
         ),
       },

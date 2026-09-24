@@ -1,4 +1,4 @@
-import { type FormEvent, useEffect, useState } from 'react'
+import { Fragment, type ChangeEvent, type FormEvent, useEffect, useState } from 'react'
 
 import { apiFetch, ApiError } from '@/shared/api/client'
 import type { ClassGroup, RoleSlug, User } from '@/shared/auth/types'
@@ -14,7 +14,19 @@ interface PaginatedUsers {
   meta: PaginationMeta
 }
 
+interface Subject {
+  id: number
+  name: string
+}
+
 type CreatableRole = Extract<RoleSlug, 'ucenik' | 'nastavnik'>
+
+/** Roles a teaching assignment (subjects + odeljenja) can be set for. */
+const ASSIGNABLE_ROLES: RoleSlug[] = ['nastavnik', 'razredni_staresina']
+
+function selectedOptionIds(event: ChangeEvent<HTMLSelectElement>): number[] {
+  return Array.from(event.target.selectedOptions, (option) => Number(option.value))
+}
 
 export function UsersPage() {
   const [users, setUsers] = useState<User[]>([])
@@ -24,6 +36,7 @@ export function UsersPage() {
   const [listError, setListError] = useState<string | null>(null)
 
   const [classGroups, setClassGroups] = useState<ClassGroup[]>([])
+  const [subjects, setSubjects] = useState<Subject[]>([])
 
   const [showForm, setShowForm] = useState(false)
   const [name, setName] = useState('')
@@ -33,6 +46,13 @@ export function UsersPage() {
   const [formError, setFormError] = useState<ApiError | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+
+  const [assignmentsUserId, setAssignmentsUserId] = useState<number | null>(null)
+  const [assignmentSubjectIds, setAssignmentSubjectIds] = useState<number[]>([])
+  const [assignmentClassGroupIds, setAssignmentClassGroupIds] = useState<number[]>([])
+  const [assignmentError, setAssignmentError] = useState<ApiError | null>(null)
+  const [assignmentSuccess, setAssignmentSuccess] = useState<string | null>(null)
+  const [assignmentSubmitting, setAssignmentSubmitting] = useState(false)
 
   useEffect(() => {
     void loadUsers(page)
@@ -44,6 +64,11 @@ export function UsersPage() {
       .catch(() => {
         // The create form's class-group select just stays empty; a real
         // failure surfaces again (and is shown) when the form is submitted.
+      })
+    apiFetch<{ data: Subject[] }>('/api/v1/subjects')
+      .then((result) => setSubjects(result.data))
+      .catch(() => {
+        // The teaching-assignments editor's subject select just stays empty.
       })
   }, [])
 
@@ -92,6 +117,41 @@ export function UsersPage() {
       }
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  function openAssignments(user: User) {
+    setAssignmentsUserId(user.id)
+    // The API has no GET for a user's current assignments, so the selects
+    // just start empty - a documented, acceptable limitation, not a bug.
+    setAssignmentSubjectIds([])
+    setAssignmentClassGroupIds([])
+    setAssignmentError(null)
+    setAssignmentSuccess(null)
+  }
+
+  async function handleAssignmentsSubmit(event: FormEvent, userId: number) {
+    event.preventDefault()
+    setAssignmentError(null)
+    setAssignmentSuccess(null)
+    setAssignmentSubmitting(true)
+    try {
+      const result = await apiFetch<{ message: string }>(
+        `/api/v1/users/${userId}/teaching-assignments`,
+        {
+          method: 'PUT',
+          body: { subject_ids: assignmentSubjectIds, class_group_ids: assignmentClassGroupIds },
+        },
+      )
+      setAssignmentSuccess(result.message ?? 'Zaduženja su sačuvana.')
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setAssignmentError(err)
+      } else {
+        throw err
+      }
+    } finally {
+      setAssignmentSubmitting(false)
     }
   }
 
@@ -241,20 +301,137 @@ export function UsersPage() {
                   <th className="px-4 py-3 text-xs font-semibold tracking-wide text-gray-500 uppercase">
                     Odeljenje
                   </th>
+                  <th className="px-4 py-3 text-xs font-semibold tracking-wide text-gray-500 uppercase">
+                    Predmeti/odeljenja
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 bg-white">
                 {users.map((user) => (
-                  <tr key={user.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3">{user.name}</td>
-                    <td className="px-4 py-3">{user.email}</td>
-                    <td className="px-4 py-3">{user.role.name}</td>
-                    <td className="px-4 py-3">{user.class_group?.name ?? '-'}</td>
-                  </tr>
+                  <Fragment key={user.id}>
+                    <tr className="hover:bg-gray-50">
+                      <td className="px-4 py-3">{user.name}</td>
+                      <td className="px-4 py-3">{user.email}</td>
+                      <td className="px-4 py-3">{user.role.name}</td>
+                      <td className="px-4 py-3">{user.class_group?.name ?? '-'}</td>
+                      <td className="px-4 py-3">
+                        {ASSIGNABLE_ROLES.includes(user.role.slug) ? (
+                          <button
+                            type="button"
+                            onClick={() => openAssignments(user)}
+                            className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                          >
+                            Uredi predmete/odeljenja
+                          </button>
+                        ) : (
+                          '-'
+                        )}
+                      </td>
+                    </tr>
+                    {assignmentsUserId === user.id && (
+                      <tr className="bg-gray-50">
+                        <td colSpan={5} className="px-4 py-4">
+                          <form
+                            onSubmit={(event) => void handleAssignmentsSubmit(event, user.id)}
+                            className="space-y-3"
+                          >
+                            <div className="flex items-center justify-between">
+                              <h3 className="text-sm font-medium">Zaduženja - {user.name}</h3>
+                              <button
+                                type="button"
+                                onClick={() => setAssignmentsUserId(null)}
+                                className="text-sm text-gray-500 hover:text-gray-700"
+                              >
+                                Otkaži
+                              </button>
+                            </div>
+
+                            {assignmentSuccess && (
+                              <p className="rounded bg-green-50 p-2 text-sm text-green-700">
+                                {assignmentSuccess}
+                              </p>
+                            )}
+                            {assignmentError && (
+                              <div className="rounded bg-red-50 p-2 text-sm text-red-700">
+                                <p>{assignmentError.message}</p>
+                                {assignmentError.errors &&
+                                  Object.values(assignmentError.errors)
+                                    .flat()
+                                    .map((message) => <p key={message}>{message}</p>)}
+                              </div>
+                            )}
+
+                            <p className="text-xs text-gray-500">
+                              Napomena: API ne vraća trenutna zaduženja, pa liste ispod uvek kreću
+                              prazne - čuvanje zamenjuje kompletan spisak zaduženja.
+                            </p>
+
+                            <div className="flex flex-wrap gap-4">
+                              <div>
+                                <label
+                                  htmlFor={`assignment_subjects_${user.id}`}
+                                  className="block text-sm font-medium text-gray-700"
+                                >
+                                  Predmeti
+                                </label>
+                                <select
+                                  id={`assignment_subjects_${user.id}`}
+                                  multiple
+                                  value={assignmentSubjectIds.map(String)}
+                                  onChange={(event) =>
+                                    setAssignmentSubjectIds(selectedOptionIds(event))
+                                  }
+                                  className="mt-1 h-32 rounded border border-gray-300 px-3 py-2"
+                                >
+                                  {subjects.map((subject) => (
+                                    <option key={subject.id} value={subject.id}>
+                                      {subject.name}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+
+                              <div>
+                                <label
+                                  htmlFor={`assignment_class_groups_${user.id}`}
+                                  className="block text-sm font-medium text-gray-700"
+                                >
+                                  Odeljenja
+                                </label>
+                                <select
+                                  id={`assignment_class_groups_${user.id}`}
+                                  multiple
+                                  value={assignmentClassGroupIds.map(String)}
+                                  onChange={(event) =>
+                                    setAssignmentClassGroupIds(selectedOptionIds(event))
+                                  }
+                                  className="mt-1 h-32 rounded border border-gray-300 px-3 py-2"
+                                >
+                                  {classGroups.map((group) => (
+                                    <option key={group.id} value={group.id}>
+                                      {group.name}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                            </div>
+
+                            <button
+                              type="submit"
+                              disabled={assignmentSubmitting}
+                              className="rounded bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-50"
+                            >
+                              {assignmentSubmitting ? 'Čuvanje...' : 'Sačuvaj zaduženja'}
+                            </button>
+                          </form>
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
                 ))}
                 {users.length === 0 && (
                   <tr>
-                    <td colSpan={4} className="px-4 py-6 text-center text-gray-500">
+                    <td colSpan={5} className="px-4 py-6 text-center text-gray-500">
                       Nema korisnika.
                     </td>
                   </tr>

@@ -25,6 +25,12 @@ export function Layout() {
             <Link to="/subjects" className="text-gray-600 hover:text-gray-900">
               Predmeti
             </Link>
+            <Link to="/calendar" className="text-gray-600 hover:text-gray-900">
+              Kalendar
+            </Link>
+            <Link to="/scheduled-tests" className="text-gray-600 hover:text-gray-900">
+              Zakazani testovi
+            </Link>
             {user.role.slug === 'direktor' && (
               <>
                 <Link to="/admin/users" className="text-gray-600 hover:text-gray-900">
