@@ -157,3 +157,22 @@ export function IconLogout(props: IconProps) {
     </svg>
   )
 }
+
+export function IconBell(props: IconProps) {
+  return (
+    <svg {...iconProps(props)}>
+      <path d="M6 9a6 6 0 1 1 12 0c0 3.5 1 5 1.5 6H4.5C5 14 6 12.5 6 9Z" />
+      <path d="M10 19a2 2 0 0 0 4 0" />
+    </svg>
+  )
+}
+
+export function IconClockRewind(props: IconProps) {
+  return (
+    <svg {...iconProps(props)}>
+      <path d="M3 12a9 9 0 1 0 3-6.7" />
+      <path d="M3 4v4h4" />
+      <path d="M12 8v4l3 2" />
+    </svg>
+  )
+}

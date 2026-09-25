@@ -10,6 +10,7 @@ import { SetPasswordPage } from '@/features/auth/SetPasswordPage'
 import { ScheduledTestsPage } from '@/features/calendar/ScheduledTestsPage'
 import { SchoolCalendarPage } from '@/features/calendar/SchoolCalendarPage'
 import { HomePage } from '@/features/home/HomePage'
+import { NotificationsPage } from '@/features/notifications/NotificationsPage'
 import { ProfilePage } from '@/features/profile/ProfilePage'
 import { LessonsPage } from '@/features/subjects/LessonsPage'
 import { SubjectsPage } from '@/features/subjects/SubjectsPage'
@@ -113,6 +114,14 @@ export const router = createBrowserRouter([
             <RequireRole roles={['ucenik', 'roditelj']}>
               <ProfilePage />
             </RequireRole>
+          </RequireAuth>
+        ),
+      },
+      {
+        path: 'notifications',
+        element: (
+          <RequireAuth>
+            <NotificationsPage />
           </RequireAuth>
         ),
       },

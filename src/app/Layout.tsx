@@ -1,11 +1,13 @@
-import type { ReactNode } from 'react'
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { type ReactNode, useEffect, useState } from 'react'
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 
+import { apiFetch } from '@/shared/api/client'
 import { initials } from '@/shared/auth/roleColors'
 import { useAuthStore } from '@/shared/auth/store'
 import { IconButton } from '@/shared/ui/IconButton'
 import {
   IconAnalytics,
+  IconBell,
   IconCalendar,
   IconClassGroups,
   IconLogout,
@@ -15,11 +17,14 @@ import {
   IconSubjects,
   IconUsers,
 } from '@/shared/ui/icons'
+import { DemoSimulatorWidget } from '@/features/demo-simulator/DemoSimulatorWidget'
+import type { NotificationsResponse } from '@/features/notifications/types'
 
 interface NavItem {
   to: string
   label: string
   icon: (props: { className?: string }) => ReactNode
+  badge?: number
 }
 
 const PROFIL_ITEMS: NavItem[] = [{ to: '/profile', label: 'Moj profil', icon: IconProfile }]
@@ -44,7 +49,7 @@ function NavGroup({ label, items }: { label: string; items: NavItem[] }) {
       <div className="px-2.5 pt-2.5 pb-1 text-[11px] font-semibold tracking-wide text-ink-faint uppercase max-[760px]:hidden">
         {label}
       </div>
-      {items.map(({ to, label: itemLabel, icon: Icon }) => (
+      {items.map(({ to, label: itemLabel, icon: Icon, badge }) => (
         <NavLink
           key={to}
           to={to}
@@ -57,6 +62,11 @@ function NavGroup({ label, items }: { label: string; items: NavItem[] }) {
         >
           <Icon className="h-4 w-4 shrink-0 opacity-85" />
           {itemLabel}
+          {!!badge && (
+            <span className="ml-auto rounded-full bg-accent px-1.5 py-0.5 text-[10.5px] font-semibold text-accent-ink">
+              {badge}
+            </span>
+          )}
         </NavLink>
       ))}
     </nav>
@@ -69,6 +79,24 @@ export function Layout() {
   const status = useAuthStore((state) => state.status)
   const logout = useAuthStore((state) => state.logout)
   const navigate = useNavigate()
+  const location = useLocation()
+  const [unreadCount, setUnreadCount] = useState(0)
+
+  useEffect(() => {
+    if (status !== 'authenticated') return
+
+    async function loadUnreadCount() {
+      try {
+        const result = await apiFetch<NotificationsResponse>('/api/v1/notifications')
+        setUnreadCount(result.unread_count)
+      } catch {
+        // The badge just stays at its last known value - not worth surfacing an error for this.
+      }
+    }
+    // Re-fetches on every navigation too, so the badge reflects notifications
+    // just read on /notifications without needing shared state between them.
+    void loadUnreadCount()
+  }, [status, location.pathname])
 
   async function handleLogout() {
     await logout()
@@ -78,6 +106,10 @@ export function Layout() {
   if (status !== 'authenticated' || !user) {
     return <Outlet />
   }
+
+  const notificationItems: NavItem[] = [
+    { to: '/notifications', label: 'Notifikacije', icon: IconBell, badge: unreadCount },
+  ]
 
   return (
     <div className="flex min-h-screen bg-bg text-ink max-[760px]:flex-col">
@@ -90,6 +122,8 @@ export function Layout() {
             E-School
           </div>
         </div>
+
+        <NavGroup label="Obaveštenja" items={notificationItems} />
 
         {(user.role.slug === 'ucenik' || user.role.slug === 'roditelj') && (
           <NavGroup label="Profil" items={PROFIL_ITEMS} />
@@ -122,6 +156,8 @@ export function Layout() {
       <main className="min-w-0 flex-1 px-9 py-7 max-[760px]:px-4 max-[760px]:py-5">
         <Outlet />
       </main>
+
+      <DemoSimulatorWidget />
     </div>
   )
 }
