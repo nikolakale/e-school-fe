@@ -99,16 +99,29 @@ export function AnalyticsPage() {
     )
   }
 
+  const schoolYearId = String(
+    semesters.find((semester) => String(semester.id) === semesterId)?.school_year_id ?? '',
+  )
+
   if (user.role.slug === 'razredni_staresina') {
-    return <RazredniAnalytics user={user} semesterId={semesterId} semesterPicker={semesterPicker} />
+    return (
+      <RazredniAnalytics
+        user={user}
+        semesterId={semesterId}
+        schoolYearId={schoolYearId}
+        semesterPicker={semesterPicker}
+      />
+    )
   }
 
   if (user.role.slug === 'direktor' || user.role.slug === 'strucni_saradnik') {
     return (
       <StaffWideAnalytics
         semesterId={semesterId}
+        schoolYearId={schoolYearId}
         semesterPicker={semesterPicker}
         canViewTeacherComparison={user.role.slug === 'direktor'}
+        canFinalizeGrades={user.role.slug === 'direktor'}
       />
     )
   }
@@ -191,10 +204,12 @@ function NastavnikAnalytics({
 function RazredniAnalytics({
   user,
   semesterId,
+  schoolYearId,
   semesterPicker,
 }: {
   user: User
   semesterId: string
+  schoolYearId: string
   semesterPicker: React.ReactNode
 }) {
   const [classGroupId, setClassGroupId] = useState<string | null>(null)
@@ -225,19 +240,30 @@ function RazredniAnalytics({
   return (
     <div className="max-w-4xl">
       <PageHeader eyebrow="Analitika" title="Analitika odeljenja" action={semesterPicker} />
-      {classGroupId && <ClassOverviewSection classGroupId={classGroupId} semesterId={semesterId} />}
+      {classGroupId && (
+        <ClassOverviewSection
+          classGroupId={classGroupId}
+          semesterId={semesterId}
+          schoolYearId={schoolYearId}
+          canFinalizeGrades
+        />
+      )}
     </div>
   )
 }
 
 function StaffWideAnalytics({
   semesterId,
+  schoolYearId,
   semesterPicker,
   canViewTeacherComparison,
+  canFinalizeGrades,
 }: {
   semesterId: string
+  schoolYearId: string
   semesterPicker: React.ReactNode
   canViewTeacherComparison: boolean
+  canFinalizeGrades: boolean
 }) {
   const [classGroups, setClassGroups] = useState<ClassGroup[]>([])
   const [subjects, setSubjects] = useState<{ id: number; name: string }[]>([])
@@ -280,7 +306,12 @@ function StaffWideAnalytics({
           ))}
         </select>
         {overviewClassGroupId && (
-          <ClassOverviewSection classGroupId={overviewClassGroupId} semesterId={semesterId} />
+          <ClassOverviewSection
+            classGroupId={overviewClassGroupId}
+            semesterId={semesterId}
+            schoolYearId={schoolYearId}
+            canFinalizeGrades={canFinalizeGrades}
+          />
         )}
       </section>
 
@@ -675,13 +706,20 @@ function QuestionAnalysisSection({
 function ClassOverviewSection({
   classGroupId,
   semesterId,
+  schoolYearId,
+  canFinalizeGrades = false,
 }: {
   classGroupId: string
   semesterId: string
+  schoolYearId?: string
+  canFinalizeGrades?: boolean
 }) {
   const [overview, setOverview] = useState<ClassOverview | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<ApiError | null>(null)
+  const [refreshKey, setRefreshKey] = useState(0)
+  const [finalizingKey, setFinalizingKey] = useState<string | null>(null)
+  const [finalizeError, setFinalizeError] = useState<ApiError | null>(null)
 
   useEffect(() => {
     async function load() {
@@ -699,7 +737,35 @@ function ClassOverviewSection({
       }
     }
     void load()
-  }, [classGroupId, semesterId])
+  }, [classGroupId, semesterId, refreshKey])
+
+  async function handleFinalize(studentId: number, subjectId: number, value: number) {
+    if (!schoolYearId) return
+    if (!window.confirm(`Finalizovati ocenu ${value}? Ovo se ne može poništiti.`)) return
+
+    const key = `${studentId}-${subjectId}`
+    setFinalizingKey(key)
+    setFinalizeError(null)
+    try {
+      await apiFetch('/api/v1/grades', {
+        method: 'POST',
+        body: {
+          student_id: studentId,
+          subject_id: subjectId,
+          school_year_id: Number(schoolYearId),
+          semester_id: Number(semesterId),
+          value,
+        },
+      })
+      setRefreshKey((current) => current + 1)
+    } catch (err) {
+      setFinalizeError(
+        err instanceof ApiError ? err : new ApiError(500, 'Greška pri finalizaciji.'),
+      )
+    } finally {
+      setFinalizingKey(null)
+    }
+  }
 
   if (loading) return <p className="text-ink-muted">Učitavanje...</p>
   if (error) return <FormErrors error={error} />
@@ -744,6 +810,16 @@ function ClassOverviewSection({
         <h3 className="mb-2 text-[13px] font-semibold text-ink-muted">
           Učenici kojima je potrebna podrška
         </h3>
+        {canFinalizeGrades && (
+          <p className="mb-2 text-[12px] text-ink-faint">
+            Podvučene ocene su predlog - kliknite da finalizujete.
+          </p>
+        )}
+        {finalizeError && (
+          <div className="mb-2">
+            <FormErrors error={finalizeError} />
+          </div>
+        )}
         <Card>
           <Table>
             <thead>
@@ -769,14 +845,33 @@ function ClassOverviewSection({
                         </Td>
                       )
                     }
+                    if (entry.is_finalized || !canFinalizeGrades) {
+                      return (
+                        <Td
+                          key={subjectRow.subject.id}
+                          className={
+                            entry.is_finalized ? 'font-mono text-ink' : 'font-mono text-ink-muted'
+                          }
+                        >
+                          {entry.grade}
+                        </Td>
+                      )
+                    }
+                    const key = `${row.student.id}-${subjectRow.subject.id}`
+                    const grade = entry.grade
                     return (
-                      <Td
-                        key={subjectRow.subject.id}
-                        className={
-                          entry.is_finalized ? 'font-mono text-ink' : 'font-mono text-ink-muted'
-                        }
-                      >
-                        {entry.grade}
+                      <Td key={subjectRow.subject.id} className="font-mono">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            void handleFinalize(row.student.id, subjectRow.subject.id, grade)
+                          }
+                          disabled={finalizingKey === key}
+                          title="Finalizuj ocenu"
+                          className="text-accent underline decoration-dotted underline-offset-2 hover:text-ink disabled:opacity-50"
+                        >
+                          {finalizingKey === key ? '...' : grade}
+                        </button>
                       </Td>
                     )
                   })}
