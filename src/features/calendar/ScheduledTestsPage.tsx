@@ -7,14 +7,14 @@ import type { ClassGroup } from '@/shared/auth/types'
 import { Button } from '@/shared/ui/Button'
 import { Card } from '@/shared/ui/Card'
 import { Field, fieldControlClass, FormCard, FormGrid } from '@/shared/ui/Form'
-import { IconInfo, IconPlus } from '@/shared/ui/icons'
+import { DateInput } from '@/shared/ui/DateInput'
+import { IconPlus } from '@/shared/ui/icons'
 import { FormErrors, Notice } from '@/shared/ui/Notice'
 import { PageHeader } from '@/shared/ui/PageHeader'
 import { EmptyRow, Table, Tbody, Td, Th, Tr } from '@/shared/ui/Table'
 
 import {
   SCHEDULED_TEST_TYPE_LABELS,
-  type Holiday,
   type ScheduledTest,
   type ScheduledTestType,
   type SchoolYear,
@@ -87,8 +87,6 @@ export function ScheduledTestsPage() {
   const [listError, setListError] = useState<string | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
 
-  const [holidays, setHolidays] = useState<Holiday[]>([])
-
   const [subjects, setSubjects] = useState<Subject[]>([])
   const [schoolYears, setSchoolYears] = useState<SchoolYear[]>([])
   const [semesters, setSemesters] = useState<Semester[]>([])
@@ -119,16 +117,22 @@ export function ScheduledTestsPage() {
     async function loadClassGroups() {
       try {
         const result = await apiFetch<{ data: ClassGroup[] }>('/api/v1/class-groups')
-        setClassGroups(result.data)
+        // A student is locked to their own odeljenje - never to anyone else's tests.
+        const visible = isUcenik
+          ? result.data.filter((group) => group.id === user?.class_group?.id)
+          : result.data
+        setClassGroups(visible)
         setSelectedClassGroupId(
-          (current) => current || String(user?.class_group?.id ?? result.data[0]?.id ?? ''),
+          isUcenik
+            ? String(user?.class_group?.id ?? '')
+            : (current) => current || String(user?.class_group?.id ?? visible[0]?.id ?? ''),
         )
       } catch {
         // The picker just stays empty; the page below shows nothing to pick.
       }
     }
     void loadClassGroups()
-  }, [user?.class_group?.id])
+  }, [user?.class_group?.id, isUcenik])
 
   // Options for the create form's selects, fetched once.
   useEffect(() => {
@@ -150,7 +154,7 @@ export function ScheduledTestsPage() {
     void loadFormOptions()
   }, [])
 
-  // Scheduled tests (and holiday context) for the selected odeljenje.
+  // Scheduled tests for the selected odeljenje.
   useEffect(() => {
     async function loadTests() {
       if (!selectedClassGroupId) {
@@ -172,34 +176,7 @@ export function ScheduledTestsPage() {
       }
     }
 
-    async function loadHolidayContext() {
-      if (!selectedClassGroupId) {
-        setHolidays([])
-        return
-      }
-
-      try {
-        const yearsResult = await apiFetch<{ data: SchoolYear[] }>('/api/v1/school-years')
-        const today = new Date().toISOString().slice(0, 10)
-        const currentYear =
-          yearsResult.data.find((year) => year.starts_on <= today && today <= year.ends_on) ??
-          yearsResult.data[0]
-        if (!currentYear) {
-          setHolidays([])
-          return
-        }
-        const holidaysResult = await apiFetch<{ data: Holiday[] }>(
-          `/api/v1/holidays?school_year_id=${currentYear.id}`,
-        )
-        setHolidays(holidaysResult.data)
-      } catch {
-        // Holidays are just display context here - fail silently.
-        setHolidays([])
-      }
-    }
-
     void loadTests()
-    void loadHolidayContext()
   }, [selectedClassGroupId, refreshKey])
 
   function openForm() {
@@ -399,24 +376,22 @@ export function ScheduledTestsPage() {
             </Field>
 
             <Field label="Dostupan od" htmlFor="st_available_from">
-              <input
+              <DateInput
                 id="st_available_from"
-                type="datetime-local"
+                withTime
                 required
                 value={availableFrom}
-                onChange={(event) => setAvailableFrom(event.target.value)}
-                className={fieldControlClass}
+                onChange={setAvailableFrom}
               />
             </Field>
 
             <Field label="Dostupan do" htmlFor="st_available_until">
-              <input
+              <DateInput
                 id="st_available_until"
-                type="datetime-local"
+                withTime
                 required
                 value={availableUntil}
-                onChange={(event) => setAvailableUntil(event.target.value)}
-                className={fieldControlClass}
+                onChange={setAvailableUntil}
               />
             </Field>
 
@@ -471,38 +446,24 @@ export function ScheduledTestsPage() {
         </FormCard>
       )}
 
-      <div className="mb-4 flex flex-col gap-1.5" style={{ maxWidth: 260 }}>
-        <label htmlFor="st_class_group_filter" className="text-xs font-semibold text-ink-muted">
-          Odeljenje
-        </label>
-        <select
-          id="st_class_group_filter"
-          value={selectedClassGroupId}
-          onChange={(event) => setSelectedClassGroupId(event.target.value)}
-          className={fieldControlClass}
-        >
-          {classGroups.length === 0 && <option value="">Nema odeljenja</option>}
-          {classGroups.map((group) => (
-            <option key={group.id} value={group.id}>
-              {group.name}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {holidays.length > 0 && (
-        <div className="mb-4 flex max-w-xl gap-2.5 rounded-lg border border-dashed border-border px-3.5 py-3 text-[12.5px] text-ink-muted">
-          <IconInfo className="mt-0.5 h-4 w-4 shrink-0 text-ink-faint" />
-          <div>
-            <p className="font-semibold text-ink">Praznici u tekućoj školskoj godini</p>
-            <ul className="mt-1 list-inside list-disc">
-              {holidays.map((holiday) => (
-                <li key={holiday.id}>
-                  {holiday.name}: {holiday.starts_on} - {holiday.ends_on}
-                </li>
-              ))}
-            </ul>
-          </div>
+      {!isUcenik && (
+        <div className="mb-4 flex flex-col gap-1.5" style={{ maxWidth: 260 }}>
+          <label htmlFor="st_class_group_filter" className="text-xs font-semibold text-ink-muted">
+            Odeljenje
+          </label>
+          <select
+            id="st_class_group_filter"
+            value={selectedClassGroupId}
+            onChange={(event) => setSelectedClassGroupId(event.target.value)}
+            className={fieldControlClass}
+          >
+            {classGroups.length === 0 && <option value="">Nema odeljenja</option>}
+            {classGroups.map((group) => (
+              <option key={group.id} value={group.id}>
+                {group.name}
+              </option>
+            ))}
+          </select>
         </div>
       )}
 
@@ -571,24 +532,22 @@ export function ScheduledTestsPage() {
                             )}
 
                             <Field label="Dostupan od" htmlFor={`reschedule_from_${test.id}`}>
-                              <input
+                              <DateInput
                                 id={`reschedule_from_${test.id}`}
-                                type="datetime-local"
+                                withTime
                                 required
                                 value={rescheduleFrom}
-                                onChange={(event) => setRescheduleFrom(event.target.value)}
-                                className={fieldControlClass}
+                                onChange={setRescheduleFrom}
                               />
                             </Field>
 
                             <Field label="Dostupan do" htmlFor={`reschedule_until_${test.id}`}>
-                              <input
+                              <DateInput
                                 id={`reschedule_until_${test.id}`}
-                                type="datetime-local"
+                                withTime
                                 required
                                 value={rescheduleUntil}
-                                onChange={(event) => setRescheduleUntil(event.target.value)}
-                                className={fieldControlClass}
+                                onChange={setRescheduleUntil}
                               />
                             </Field>
 

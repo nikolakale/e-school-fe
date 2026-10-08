@@ -5,6 +5,7 @@ import { useAuthStore } from '@/shared/auth/store'
 import { Button } from '@/shared/ui/Button'
 import { Card } from '@/shared/ui/Card'
 import { Field, fieldControlClass, FormCard, FormGrid } from '@/shared/ui/Form'
+import { DateInput } from '@/shared/ui/DateInput'
 import { IconPlus } from '@/shared/ui/icons'
 import { FormErrors, Notice } from '@/shared/ui/Notice'
 import { EmptyRow, Table, Tbody, Td, Th, Tr } from '@/shared/ui/Table'
@@ -114,25 +115,11 @@ export function SchoolYearsSection() {
             </Field>
 
             <Field label="Početak" htmlFor="sy_starts_on">
-              <input
-                id="sy_starts_on"
-                type="date"
-                required
-                value={startsOn}
-                onChange={(event) => setStartsOn(event.target.value)}
-                className={fieldControlClass}
-              />
+              <DateInput id="sy_starts_on" required value={startsOn} onChange={setStartsOn} />
             </Field>
 
             <Field label="Kraj" htmlFor="sy_ends_on">
-              <input
-                id="sy_ends_on"
-                type="date"
-                required
-                value={endsOn}
-                onChange={(event) => setEndsOn(event.target.value)}
-                className={fieldControlClass}
-              />
+              <DateInput id="sy_ends_on" required value={endsOn} onChange={setEndsOn} />
             </Field>
           </FormGrid>
 
