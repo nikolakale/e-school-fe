@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { apiFetch, ApiError } from '@/shared/api/client'
 import { useAuthStore } from '@/shared/auth/store'
 import type { ClassGroup } from '@/shared/auth/types'
+import { useDemoNow } from '@/shared/demo/store'
 import { Button } from '@/shared/ui/Button'
 import { Card } from '@/shared/ui/Card'
 import { Field, fieldControlClass, FormCard, FormGrid } from '@/shared/ui/Form'
@@ -36,7 +37,7 @@ const TEST_TYPES: ScheduledTestType[] = ['mesecni', 'dvomesecni', 'polugodisnji'
  * to TakeTestPage, not this list.
  */
 function StudentTestAction({ test }: { test: ScheduledTest }) {
-  const now = new Date()
+  const now = useDemoNow()
   if (now < new Date(test.available_from)) {
     return <span className="text-[12.5px] text-ink-faint">Uskoro</span>
   }

@@ -1,11 +1,9 @@
 import { useEffect, useState } from 'react'
 
-import { apiFetch } from '@/shared/api/client'
 import { Card } from '@/shared/ui/Card'
 import { IconButton } from '@/shared/ui/IconButton'
 import { IconClockRewind } from '@/shared/ui/icons'
-
-import type { DemoJump, DemoStatus } from './types'
+import { useDemoClock, type DemoJump } from '@/shared/demo/store'
 
 const JUMP_LABELS: Record<Exclude<DemoJump, 'reset'>, string> = {
   day: '+1 dan',
@@ -28,35 +26,26 @@ function formatSimulatedAt(iso: string | null): string {
  * Faza 8 "Simulator" - only renders once GET /api/v1/demo/status succeeds
  * (the route literally doesn't exist unless DEMO_MODE=true on the BE), per
  * Simulator.md: any logged-in user may drive it, it's a presentation tool,
- * not a permissioned feature.
+ * not a permissioned feature. The simulated time itself lives in the shared
+ * `useDemoClock` store, not local state, so other pages (e.g. the scheduled
+ * tests list) can react to it too.
  */
 export function DemoSimulatorWidget() {
-  const [status, setStatus] = useState<DemoStatus | null>(null)
-  const [available, setAvailable] = useState(false)
+  const available = useDemoClock((state) => state.available)
+  const simulatedAt = useDemoClock((state) => state.simulatedAt)
+  const fetchStatus = useDemoClock((state) => state.fetchStatus)
+  const jump = useDemoClock((state) => state.jump)
   const [open, setOpen] = useState(false)
   const [jumping, setJumping] = useState<DemoJump | null>(null)
 
   useEffect(() => {
-    async function loadStatus() {
-      try {
-        const result = await apiFetch<{ data: DemoStatus }>('/api/v1/demo/status')
-        setStatus(result.data)
-        setAvailable(true)
-      } catch {
-        setAvailable(false)
-      }
-    }
-    void loadStatus()
-  }, [])
+    void fetchStatus()
+  }, [fetchStatus])
 
-  async function handleJump(jump: DemoJump) {
-    setJumping(jump)
+  async function handleJump(value: DemoJump) {
+    setJumping(value)
     try {
-      const result = await apiFetch<{ data: DemoStatus }>('/api/v1/demo/time', {
-        method: 'POST',
-        body: { jump },
-      })
-      setStatus(result.data)
+      await jump(value)
     } catch {
       // The panel just keeps showing the last known simulated time.
     } finally {
@@ -74,18 +63,18 @@ export function DemoSimulatorWidget() {
             Simulator
           </div>
           <div className="mb-3 font-mono text-[13px] text-ink">
-            {formatSimulatedAt(status?.simulated_at ?? null)}
+            {formatSimulatedAt(simulatedAt)}
           </div>
           <div className="flex flex-col gap-1.5">
-            {(Object.keys(JUMP_LABELS) as Array<Exclude<DemoJump, 'reset'>>).map((jump) => (
+            {(Object.keys(JUMP_LABELS) as Array<Exclude<DemoJump, 'reset'>>).map((jumpOption) => (
               <button
-                key={jump}
+                key={jumpOption}
                 type="button"
                 disabled={jumping !== null}
-                onClick={() => void handleJump(jump)}
+                onClick={() => void handleJump(jumpOption)}
                 className="rounded-md border border-border bg-surface px-2.5 py-1.5 text-left text-[12.5px] font-medium text-ink hover:bg-surface-2 disabled:opacity-50"
               >
-                {jumping === jump ? '...' : JUMP_LABELS[jump]}
+                {jumping === jumpOption ? '...' : JUMP_LABELS[jumpOption]}
               </button>
             ))}
             <button
